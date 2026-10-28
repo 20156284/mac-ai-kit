@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "id": "replace-with-verified-id",
+      "name": "占位示例，不可下载",
+      "repo_id": null,
+      "enabled": false,
+      "revision": "master",
+      "precision": "待核查",
+      "readiness": "unknown",
+      "license": "待核查",
+      "license_url": null,
+      "license_notice": "不要在尚未核查许可证和地区限制前启用。",
+      "notes": "请填写真实已核实的 ModelScope 仓库。",
+      "include": [],
+      "exclude": []
+    }
+  ]
+}

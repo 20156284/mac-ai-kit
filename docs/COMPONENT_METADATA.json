@@ -1,0 +1,146 @@
+{
+  "verified_at": "2026-10-21",
+  "notes": [
+    "模型文件元数据通过魔搭官方文件 API 读取；运行时元数据来自对应官方 GitHub release/API 和固定提交源码。未下载权重。",
+    "Krea2 Raw 与 Turbo 共用文本编码器和 VAE；不要重复下载。",
+    "文件修订版本是逐文件提交标识，不一定是整个仓库的修订版本。",
+    "Qwen-Image-2.1-Turbo三项BF16权重共32,440,124,920字节；同名HF/魔搭SHA256一致。固定sd.cpp版本文档含Turbo与RGBA，未在Mac运行。"
+  ],
+  "components": [
+    {
+      "component_id": "qwen21-turbo",
+      "repo_id": "Comfy-Org/Qwen-Image-2.1",
+      "path": "diffusion_models/qwen_image_2.1_turbo_bf16.safetensors",
+      "size_bytes": 14230280616,
+      "sha256": "8b74237a7f505773e2c66726fa696444b4c704585c93a347cff9044937f7914a",
+      "file_revision": "8c798285d642b81a1af415b70f2e444e809820d7",
+      "license": "Qwen Research License",
+      "metadata_url": "https://modelscope.cn/api/v1/models/Comfy-Org/Qwen-Image-2.1/repo/files?Revision=master&Recursive=true"
+    },
+    {
+      "component_id": "qwen21-text",
+      "repo_id": "Comfy-Org/Qwen-Image-2.1",
+      "path": "text_encoders/qwen3vl_8b_bf16.safetensors",
+      "size_bytes": 17534334616,
+      "sha256": "68bdc82bc1b66851162ae656225e7e2068166b603db19bd5d5a3b90eb12669a9",
+      "file_revision": "5dc8a8352312860d67e07cc9bee310dc7ed3e55c",
+      "license": "Qwen Research License",
+      "metadata_url": "https://modelscope.cn/api/v1/models/Comfy-Org/Qwen-Image-2.1/repo/files?Revision=master&Recursive=true"
+    },
+    {
+      "component_id": "qwen21-vae",
+      "repo_id": "Comfy-Org/Qwen-Image-2.1",
+      "path": "vae/qwen_image_2.1_vae_bf16.safetensors",
+      "size_bytes": 675509688,
+      "sha256": "bb21f7473051e1ac368515dd3f2e15cd44d7a11748ee8823e1ddca3e4876b7c9",
+      "file_revision": "5dc8a8352312860d67e07cc9bee310dc7ed3e55c",
+      "license": "Qwen Research License",
+      "metadata_url": "https://modelscope.cn/api/v1/models/Comfy-Org/Qwen-Image-2.1/repo/files?Revision=master&Recursive=true"
+    },
+    {
+      "component_id": "krea2-raw-bf16",
+      "repo_id": "Comfy-Org/Krea-2",
+      "path": "diffusion_models/krea2_raw_bf16.safetensors",
+      "size_bytes": 26283332608,
+      "sha256": "f99bb0ff8e362b77342bc4994e0c50906fe7ef7074864b181b7d48d2fa6d03d7",
+      "file_revision": "0c5fa9fe4f9626ef1f66408ef4b23d784bf8b345",
+      "license": "krea-2-community-license",
+      "metadata_url": "https://modelscope.cn/api/v1/models/Comfy-Org/Krea-2/repo/files?Revision=master&Recursive=true"
+    },
+    {
+      "component_id": "krea2-raw-bf16",
+      "repo_id": "Comfy-Org/Krea-2",
+      "path": "text_encoders/qwen3vl_4b_bf16.safetensors",
+      "size_bytes": 8875719384,
+      "sha256": "36f3ff447ef59201722e8f9ce6020c9819fdcfba6aa2608c4e09b1c0ce114e34",
+      "file_revision": "945e5173983d8ce2449ebe463d0ee1b6d5828a5c",
+      "license": "krea-2-community-license",
+      "metadata_url": "https://modelscope.cn/api/v1/models/Comfy-Org/Krea-2/repo/files?Revision=master&Recursive=true"
+    },
+    {
+      "component_id": "krea2-turbo-bf16",
+      "repo_id": "Comfy-Org/Krea-2",
+      "path": "diffusion_models/krea2_turbo_bf16.safetensors",
+      "size_bytes": 26283332608,
+      "sha256": "78bbf8f4165eda19cea3cb06c78089221932a39e2eed8af9da741f942c47ffb3",
+      "file_revision": "33023f372b8de8eb3567db20dbcea8f125e0fe4e",
+      "license": "krea-2-community-license",
+      "metadata_url": "https://modelscope.cn/api/v1/models/Comfy-Org/Krea-2/repo/files?Revision=master&Recursive=true"
+    },
+    {
+      "component_id": "krea2-vae",
+      "repo_id": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+      "path": "split_files/vae/wan_2.1_vae.safetensors",
+      "size_bytes": 253815318,
+      "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+      "file_revision": "28eb857b47db293db0455bfba5bdefdcafa4036c",
+      "license": "see upstream component license",
+      "metadata_url": "https://modelscope.cn/api/v1/models/Comfy-Org/Wan_2.1_ComfyUI_repackaged/repo/files?Revision=master&Recursive=true"
+    }
+  ],
+  "installation_workflow": {
+    "entrypoint": "start.sh",
+    "entrypoint_language": "Bash",
+    "mlx_serve_default_mode": "app_only",
+    "mlx_serve_gui": "default_app",
+    "program_root": "~/AI",
+    "model_root_default": "~/AI/models",
+    "dependency_handling": "由统一菜单检查、引导准备，成功后继续原任务；不自动接受系统权限或条款。",
+    "validation_scope": "安装流程说明，不改变下列模型来源与哈希；未在用户 Mac 安装或运行。",
+    "mlx_serve_standalone_cli": "removed",
+    "mlx_serve_service": "由用户手工打开桌面 App、加载模型并开启 API；工具包不配置 MLX CLI。",
+    "model_directory_naming": "按模型原仓库名保持大小写；音乐在music，语音在audio，跨仓库组件在dependencies/<原仓库名>。",
+    "h3_reuse": "H3单选或双选均自动检查当前模型根两版清单路径及旧video/h3-mlx-8bit；完整SHA256一致才链接复用，只补缺失或不同文件。外部来源用reuse-from；不全盘扫描、不搬改删原目录，来源须保留。"
+  },
+  "qwen21_runtime_evidence": "https://github.com/leejet/stable-diffusion.cpp/blob/0886f11b6b8b4d1f6259e0f1337cae554284c37a/docs/qwen_image_2.1.md",
+  "sd_cpp_runtime": {
+    "verified_at": "2026-10-25",
+    "tag": "master-1006-0886f11",
+    "commit": "0886f11b6b8b4d1f6259e0f1337cae554284c37a",
+    "published_at": "2026-10-24T23:46:39Z",
+    "release_metadata_url": "https://api.github.com/repos/leejet/stable-diffusion.cpp/releases/tags/master-1006-0886f11",
+    "release_immutable": false,
+    "download_url": "https://github.com/leejet/stable-diffusion.cpp/releases/download/master-1006-0886f11/sd-master-0886f11-bin-Darwin-macOS-26.6.2-arm64.zip",
+    "size_bytes": 37523648,
+    "sha256": "3aae8059599148e437d572b4921422075a48440edd60183ae1d7712875302879",
+    "digest_source": "官方 GitHub release asset digest，与实际下载 ZIP 重新计算的 SHA256 一致；安装时再次强制比对。",
+    "build_os_label": "macOS-26.6.2",
+    "model_switching": {
+      "pull_request": "https://github.com/leejet/stable-diffusion.cpp/pull/2176",
+      "api_source": "https://github.com/leejet/stable-diffusion.cpp/blob/0886f11b6b8b4d1f6259e0f1337cae554284c37a/examples/server/api.md",
+      "implementation_source": "https://github.com/leejet/stable-diffusion.cpp/blob/0886f11b6b8b4d1f6259e0f1337cae554284c37a/examples/server/routes_models.cpp",
+      "recipes": [
+        "qwen-image-21-turbo",
+        "krea2-turbo"
+      ],
+      "mode": "同一 sd-server 进程内单上下文加载、卸载与切换；不是多模型并发常驻。"
+    },
+    "upgrade_policy": "仅升级受管旧固定包的精确匹配入口；保留旧发行目录。外部命令与未知入口不覆盖，新固定包并存并由服务菜单直接使用。",
+    "validation_scope": "已核官方发行元数据与固定提交 API/配方源码；已下载官方 ZIP 核对实际 SHA256 并静态解析 Mach-O，未执行二进制、未在用户 Mac 安装或推理。",
+    "minimum_macos": "26.0",
+    "minimum_macos_status": "已静态解析官方固定资产的 LC_BUILD_VERSION；最低加载系统不代表 Metal、模型或实际推理兼容性已通过。",
+    "build_workflow_source": "https://github.com/leejet/stable-diffusion.cpp/blob/0886f11b6b8b4d1f6259e0f1337cae554284c37a/.github/workflows/build.yml",
+    "minimum_macos_evidence": {
+      "method": "纯字节解析 fat Mach-O 的 LC_BUILD_VERSION；未执行二进制",
+      "binaries": [
+        "sd-server",
+        "sd-cli",
+        "libstable-diffusion.dylib"
+      ],
+      "architectures": [
+        "x86_64",
+        "arm64"
+      ],
+      "platform": "macOS",
+      "minos": "26.0.0",
+      "sdk": "26.5.0",
+      "asset_sha256": "3aae8059599148e437d572b4921422075a48440edd60183ae1d7712875302879"
+    },
+    "installation_policy": {
+      "selection": "official-latest",
+      "metadata_url": "https://api.github.com/repos/leejet/stable-diffusion.cpp/releases/latest",
+      "directory": "~/AI/apps/sd.cpp",
+      "record": "以上 tag/commit 为历史能力核验证据，不是安装版本约束；安装时解析并校验实际发行包。"
+    }
+  }
+}

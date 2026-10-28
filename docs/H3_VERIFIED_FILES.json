@@ -1,0 +1,321 @@
+{
+  "verified_at": "2026-10-21T05:04:00Z",
+  "method": "只读魔搭完整文件API与固定提交文件树；未下载权重、未运行推理。文件SHA为服务端清单值，下载器仍须本地完整SHA核验。",
+  "models": {
+    "fl2va": {
+      "repo_id": "ddalcu/MiniMax-H3-FL2VA-MLX-Serve-8bit",
+      "revision": "caa4d86c9770a97ff35a610aa5dfcd63d0e2815a",
+      "revision_verified_via_files_api": true,
+      "source_url": "https://modelscope.cn/models/ddalcu/MiniMax-H3-FL2VA-MLX-Serve-8bit",
+      "files_api": "https://modelscope.cn/api/v1/models/ddalcu/MiniMax-H3-FL2VA-MLX-Serve-8bit/repo/files?Revision=caa4d86c9770a97ff35a610aa5dfcd63d0e2815a&Recursive=true",
+      "expected_files": {
+        ".gitattributes": {
+          "bytes": 2229,
+          "sha256": "ea531a2287d6df7b3d3760738c1d10289568afe669efd9fe34f54ffe5e76e937"
+        },
+        "LICENSE": {
+          "bytes": 17604,
+          "sha256": "59b99642b95ea21630e311198ddbfffbfe05aadba0c2f5d884cbdf4efcc90f44"
+        },
+        "MODIFICATIONS.md": {
+          "bytes": 1630,
+          "sha256": "3439a033d427a8b3225640fad4dc76787496982ee4565deafc556852a7af902a"
+        },
+        "NOTICE": {
+          "bytes": 552,
+          "sha256": "3ea3c60ee64954fc0898e68b7534e3613ba74586256aec6edad557b7f217c7c6"
+        },
+        "README.md": {
+          "bytes": 3310,
+          "sha256": "4d46d7fd915de674ef69b99b94255c9af4454145f7855592abce32c1c7d5346d"
+        },
+        "audio_vae.safetensors": {
+          "bytes": 605254808,
+          "sha256": "8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48"
+        },
+        "config.json": {
+          "bytes": 724,
+          "sha256": "add27928e87c54c6a88901d8a8c177df47691661e455f6747bc8916cee6149ec"
+        },
+        "configuration.json": {
+          "bytes": 71,
+          "sha256": "8f2d68f7d73338e74ba0a593bbdacfefa31e9a68629bc219da0935b3c24011b4"
+        },
+        "merges.txt": {
+          "bytes": 1671839,
+          "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3"
+        },
+        "text_encoder.safetensors": {
+          "bytes": 28222741760,
+          "sha256": "79514b061aa0acbeb802bbe37e4853f1b0d0e6fe7fad4f61624057201773bf56"
+        },
+        "tokenizer.json": {
+          "bytes": 7032403,
+          "sha256": "a5d85b6dcc535e6b93115a9ef287e6132fdbf30270da6218194ba742261173c7"
+        },
+        "tokenizer_config.json": {
+          "bytes": 11003,
+          "sha256": "a07e942ac874baa13758de8d1fbdb186683cc03416b5589e1b6671c6b3057c68"
+        },
+        "transformer.safetensors": {
+          "bytes": 35248980296,
+          "sha256": "eb619c2537c3557aeb94cfcc63754bccf63e3942401ad541104d059b073fdb76"
+        },
+        "turbo_lora.safetensors": {
+          "bytes": 779849816,
+          "sha256": "5a6eeba171cf183020a4ad48774bb2968f29f8168afd6ec17a04987f3528b4ea"
+        },
+        "video_vae.safetensors": {
+          "bytes": 5207808496,
+          "sha256": "7c1f131492e7eddacaac9069a61b81bdd39de5cc96561e677c5eab1cdce5e522"
+        },
+        "vocab.json": {
+          "bytes": 2776833,
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+        }
+      },
+      "include": [
+        ".gitattributes",
+        "LICENSE",
+        "MODIFICATIONS.md",
+        "NOTICE",
+        "README.md",
+        "audio_vae.safetensors",
+        "config.json",
+        "configuration.json",
+        "merges.txt",
+        "text_encoder.safetensors",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "transformer.safetensors",
+        "turbo_lora.safetensors",
+        "video_vae.safetensors",
+        "vocab.json"
+      ],
+      "file_count": 16,
+      "verified_size_bytes": 70076153374,
+      "has_turbo_lora": true,
+      "license_url": "https://modelscope.cn/models/ddalcu/MiniMax-H3-FL2VA-MLX-Serve-8bit/resolve/caa4d86c9770a97ff35a610aa5dfcd63d0e2815a/LICENSE"
+    },
+    "ref2va": {
+      "repo_id": "ddalcu/MiniMax-H3-REF2VA-MLX-Serve-8bit",
+      "revision": "10283766961b5c4015d0ea1f9e12b915b634360d",
+      "revision_verified_via_files_api": true,
+      "source_url": "https://modelscope.cn/models/ddalcu/MiniMax-H3-REF2VA-MLX-Serve-8bit",
+      "files_api": "https://modelscope.cn/api/v1/models/ddalcu/MiniMax-H3-REF2VA-MLX-Serve-8bit/repo/files?Revision=10283766961b5c4015d0ea1f9e12b915b634360d&Recursive=true",
+      "expected_files": {
+        ".gitattributes": {
+          "bytes": 2229,
+          "sha256": "ea531a2287d6df7b3d3760738c1d10289568afe669efd9fe34f54ffe5e76e937"
+        },
+        "LICENSE": {
+          "bytes": 17604,
+          "sha256": "59b99642b95ea21630e311198ddbfffbfe05aadba0c2f5d884cbdf4efcc90f44"
+        },
+        "MODIFICATIONS.md": {
+          "bytes": 1107,
+          "sha256": "30176e7b10deb8c369ede038f13f3676a67d5c6f508e5e77c26f5ce25c059a6e"
+        },
+        "NOTICE": {
+          "bytes": 121,
+          "sha256": "154fe7fbdf198395d53c57d6786b2fbf7e63a083ff70843c5ef78c0c7303d91a"
+        },
+        "README.md": {
+          "bytes": 3167,
+          "sha256": "53cbddd8ec75698d5197573e91bd69b111c9462c228bd2a2e7bfc30b0ea1e144"
+        },
+        "audio_vae.safetensors": {
+          "bytes": 605254808,
+          "sha256": "8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48"
+        },
+        "config.json": {
+          "bytes": 726,
+          "sha256": "44be4dab923f105d708785ed4715e47eade37fe74f5c0a902c862aa6075a8265"
+        },
+        "configuration.json": {
+          "bytes": 71,
+          "sha256": "8f2d68f7d73338e74ba0a593bbdacfefa31e9a68629bc219da0935b3c24011b4"
+        },
+        "merges.txt": {
+          "bytes": 1671839,
+          "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3"
+        },
+        "text_encoder.safetensors": {
+          "bytes": 28222741760,
+          "sha256": "79514b061aa0acbeb802bbe37e4853f1b0d0e6fe7fad4f61624057201773bf56"
+        },
+        "tokenizer.json": {
+          "bytes": 7032403,
+          "sha256": "a5d85b6dcc535e6b93115a9ef287e6132fdbf30270da6218194ba742261173c7"
+        },
+        "tokenizer_config.json": {
+          "bytes": 11003,
+          "sha256": "a07e942ac874baa13758de8d1fbdb186683cc03416b5589e1b6671c6b3057c68"
+        },
+        "transformer.safetensors": {
+          "bytes": 35248980518,
+          "sha256": "76a2003f331c1230ccb149ba3bb8275ace458d64bd19f2f0e4dfabedd1740bf8"
+        },
+        "video_vae.safetensors": {
+          "bytes": 5207808496,
+          "sha256": "7c1f131492e7eddacaac9069a61b81bdd39de5cc96561e677c5eab1cdce5e522"
+        },
+        "vocab.json": {
+          "bytes": 2776833,
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+        }
+      },
+      "include": [
+        ".gitattributes",
+        "LICENSE",
+        "MODIFICATIONS.md",
+        "NOTICE",
+        "README.md",
+        "audio_vae.safetensors",
+        "config.json",
+        "configuration.json",
+        "merges.txt",
+        "text_encoder.safetensors",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "transformer.safetensors",
+        "video_vae.safetensors",
+        "vocab.json"
+      ],
+      "file_count": 15,
+      "verified_size_bytes": 69296302685,
+      "has_turbo_lora": false,
+      "license_url": "https://modelscope.cn/models/ddalcu/MiniMax-H3-REF2VA-MLX-Serve-8bit/resolve/10283766961b5c4015d0ea1f9e12b915b634360d/LICENSE"
+    }
+  },
+  "existing_fl2va_catalog_matches_current_tree": true,
+  "shared_identical_files": {
+    ".gitattributes": {
+      "bytes": 2229,
+      "sha256": "ea531a2287d6df7b3d3760738c1d10289568afe669efd9fe34f54ffe5e76e937"
+    },
+    "LICENSE": {
+      "bytes": 17604,
+      "sha256": "59b99642b95ea21630e311198ddbfffbfe05aadba0c2f5d884cbdf4efcc90f44"
+    },
+    "audio_vae.safetensors": {
+      "bytes": 605254808,
+      "sha256": "8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48"
+    },
+    "configuration.json": {
+      "bytes": 71,
+      "sha256": "8f2d68f7d73338e74ba0a593bbdacfefa31e9a68629bc219da0935b3c24011b4"
+    },
+    "merges.txt": {
+      "bytes": 1671839,
+      "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3"
+    },
+    "text_encoder.safetensors": {
+      "bytes": 28222741760,
+      "sha256": "79514b061aa0acbeb802bbe37e4853f1b0d0e6fe7fad4f61624057201773bf56"
+    },
+    "tokenizer.json": {
+      "bytes": 7032403,
+      "sha256": "a5d85b6dcc535e6b93115a9ef287e6132fdbf30270da6218194ba742261173c7"
+    },
+    "tokenizer_config.json": {
+      "bytes": 11003,
+      "sha256": "a07e942ac874baa13758de8d1fbdb186683cc03416b5589e1b6671c6b3057c68"
+    },
+    "video_vae.safetensors": {
+      "bytes": 5207808496,
+      "sha256": "7c1f131492e7eddacaac9069a61b81bdd39de5cc96561e677c5eab1cdce5e522"
+    },
+    "vocab.json": {
+      "bytes": 2776833,
+      "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    }
+  },
+  "different_or_exclusive_files": {
+    "MODIFICATIONS.md": {
+      "fl2va": {
+        "bytes": 1630,
+        "sha256": "3439a033d427a8b3225640fad4dc76787496982ee4565deafc556852a7af902a"
+      },
+      "ref2va": {
+        "bytes": 1107,
+        "sha256": "30176e7b10deb8c369ede038f13f3676a67d5c6f508e5e77c26f5ce25c059a6e"
+      }
+    },
+    "NOTICE": {
+      "fl2va": {
+        "bytes": 552,
+        "sha256": "3ea3c60ee64954fc0898e68b7534e3613ba74586256aec6edad557b7f217c7c6"
+      },
+      "ref2va": {
+        "bytes": 121,
+        "sha256": "154fe7fbdf198395d53c57d6786b2fbf7e63a083ff70843c5ef78c0c7303d91a"
+      }
+    },
+    "README.md": {
+      "fl2va": {
+        "bytes": 3310,
+        "sha256": "4d46d7fd915de674ef69b99b94255c9af4454145f7855592abce32c1c7d5346d"
+      },
+      "ref2va": {
+        "bytes": 3167,
+        "sha256": "53cbddd8ec75698d5197573e91bd69b111c9462c228bd2a2e7bfc30b0ea1e144"
+      }
+    },
+    "config.json": {
+      "fl2va": {
+        "bytes": 724,
+        "sha256": "add27928e87c54c6a88901d8a8c177df47691661e455f6747bc8916cee6149ec"
+      },
+      "ref2va": {
+        "bytes": 726,
+        "sha256": "44be4dab923f105d708785ed4715e47eade37fe74f5c0a902c862aa6075a8265"
+      }
+    },
+    "transformer.safetensors": {
+      "fl2va": {
+        "bytes": 35248980296,
+        "sha256": "eb619c2537c3557aeb94cfcc63754bccf63e3942401ad541104d059b073fdb76"
+      },
+      "ref2va": {
+        "bytes": 35248980518,
+        "sha256": "76a2003f331c1230ccb149ba3bb8275ace458d64bd19f2f0e4dfabedd1740bf8"
+      }
+    },
+    "turbo_lora.safetensors": {
+      "fl2va": {
+        "bytes": 779849816,
+        "sha256": "5a6eeba171cf183020a4ad48774bb2968f29f8168afd6ec17a04987f3528b4ea"
+      },
+      "ref2va": null
+    }
+  },
+  "capacity": {
+    "independent_total_bytes": 139372456059,
+    "content_deduplicated_total_bytes": 105325139013,
+    "saved_bytes": 34047317046,
+    "shared_large_weight_bytes": 34035805064,
+    "independent_decimal_gb": 139.372456059,
+    "deduplicated_decimal_gb": 105.325139013,
+    "saved_decimal_gb": 34.047317046
+  },
+  "implementation_notes": [
+    "采用已验证内容的符号链接，不搬动来源文件；来源路径必须长期保留可访问。",
+    "transformer与config等差异文件各自保存；REF2VA无Turbo适配器，不能拿FL2VA适配器替代。",
+    "容量为权重文件逻辑字节数，不含缓存、暂存、文件系统开销或推理内存。"
+  ],
+  "audio_support": {
+    "fl2va": "文字/首尾帧到新音视频，不支持ref_audios参考音频。",
+    "ref2va": "支持ref_audios数组：base64 PCM16/PCM24/float32 WAV；最多3，音视频图片总计最多12。",
+    "versions_checked": [
+      "v26.10.2",
+      "main (2026-10-21)"
+    ],
+    "sources": [
+      "https://github.com/ddalcu/mlx-serve/blob/v26.10.2/src/gen.zig#L3717-L3725",
+      "https://github.com/ddalcu/mlx-serve/blob/v26.10.2/src/gen.zig#L4004-L4008",
+      "https://huggingface.co/ddalcu/MiniMax-H3-REF2VA-MLX-Serve-8bit",
+      "https://huggingface.co/MiniMaxAI/MiniMax-H3"
+    ]
+  }
+}

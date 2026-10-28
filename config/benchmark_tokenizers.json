@@ -1,0 +1,16 @@
+{
+  "models": [
+    {
+      "repo_id": "ddalcu/Qwen3.8-Flash-Next-MLX-Serve-8bit",
+      "base_model": "Qwen/Qwen3.8-Flash-Next",
+      "source": "https://huggingface.co/api/models/ddalcu/Qwen3.8-Flash-Next-MLX-Serve-8bit",
+      "evidence": "cardData.base_model 与两仓库 tokenizer.json LFS SHA256 完全一致",
+      "checked_at": "2026-10-23",
+      "tokenizer_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+      "tokenizer_sources": [
+        "https://huggingface.co/api/models/ddalcu/Qwen3.8-Flash-Next-MLX-Serve-8bit/tree/main",
+        "https://huggingface.co/api/models/Qwen/Qwen3.8-Flash-Next/tree/main"
+      ]
+    }
+  ]
+}

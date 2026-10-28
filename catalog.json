@@ -1,0 +1,1556 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-10-20",
+  "models": [
+    {
+      "id": "qwen21-turbo",
+      "name": "Qwen-Image-2.1-Turbo BF16（图像·支持原生透明背景）",
+      "short_name": "Comfy-Org / Qwen-Image-2.1-Turbo BF16（图像·支持原生透明背景）",
+      "repo_id": "Comfy-Org/Qwen-Image-2.1",
+      "revision": "master",
+      "subdir": "images/Qwen-Image-2.1",
+      "bundle_dir": "images/Qwen-Image-2.1",
+      "precision": "BF16 safetensors，未量化",
+      "license": "Qwen Research License",
+      "license_url": "https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo/blob/main/LICENSE",
+      "license_notice": "Qwen Research License：限非商业研究或评估；商用须另获许可。格式转换不解除限制。",
+      "source_url": "https://modelscope.cn/models/Comfy-Org/Qwen-Image-2.1",
+      "enabled": true,
+      "include": [
+        "diffusion_models/qwen_image_2.1_turbo_bf16.safetensors",
+        "README.md",
+        "LICENSE*"
+      ],
+      "disk_gb": 14.230280616,
+      "readiness": "verified_components_and_pinned_runtime_source_not_mac_tested",
+      "runtime": "stable-diffusion.cpp",
+      "requires": [
+        "qwen21-text",
+        "qwen21-vae",
+        "qwen21-license"
+      ],
+      "notes": "官方 Qwen Turbo 完整主干，由 Comfy-Org 重打包；8步、CFG 1、Euler。原生 RGBA，输出 PNG/WebP 保留透明，JPG不保留。不是 Viggle/社区加速 LoRA；不自动下载普通版、量化版或 PE 模型。",
+      "expected_files": {
+        "diffusion_models/qwen_image_2.1_turbo_bf16.safetensors": {
+          "bytes": 14230280616,
+          "sha256": "8b74237a7f505773e2c66726fa696444b4c704585c93a347cff9044937f7914a"
+        }
+      },
+      "component": false,
+      "group": "image_video",
+      "verification": {
+        "checked_at": "2026-10-21",
+        "files_api": "https://modelscope.cn/api/v1/models/Comfy-Org/Qwen-Image-2.1/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "file_last_commit_revision": "8c798285d642b81a1af415b70f2e444e809820d7",
+        "upstream_lfs_comparison": "魔搭与Hugging Face同名文件大小及SHA256一致；未下载权重。",
+        "runtime_docs": "https://github.com/leejet/stable-diffusion.cpp/blob/master-1006-0886f11/docs/qwen_image_2.1.md"
+      }
+    },
+    {
+      "id": "qwen21-text",
+      "name": "Qwen 2.1 Qwen3-VL 8B BF16 编码器",
+      "short_name": "Comfy-Org / Qwen 2.1 Qwen3-VL 8B BF16 编码器",
+      "repo_id": "Comfy-Org/Qwen-Image-2.1",
+      "revision": "master",
+      "subdir": "images/Qwen-Image-2.1",
+      "bundle_dir": "images/Qwen-Image-2.1",
+      "precision": "BF16 safetensors，未量化",
+      "license": "Qwen Research License",
+      "license_url": "https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo/blob/main/LICENSE",
+      "license_notice": "Qwen Research License：限非商业研究或评估；商用须另获许可。格式转换不解除限制。",
+      "source_url": "https://modelscope.cn/models/Comfy-Org/Qwen-Image-2.1",
+      "enabled": true,
+      "include": [
+        "text_encoders/qwen3vl_8b_bf16.safetensors",
+        "README.md",
+        "LICENSE*"
+      ],
+      "disk_gb": 17.534334616,
+      "readiness": "verified_components_and_pinned_runtime_source_not_mac_tested",
+      "runtime": "stable-diffusion.cpp",
+      "requires": [],
+      "notes": "Qwen-Image-2.1-Turbo必要组件。编码器使用完整BF16 safetensors；VAE必须为2.1专属版本，不可替换成旧Qwen/Wan VAE。",
+      "expected_files": {
+        "text_encoders/qwen3vl_8b_bf16.safetensors": {
+          "bytes": 17534334616,
+          "sha256": "68bdc82bc1b66851162ae656225e7e2068166b603db19bd5d5a3b90eb12669a9"
+        }
+      },
+      "component": true,
+      "group": "image_video",
+      "verification": {
+        "checked_at": "2026-10-21",
+        "files_api": "https://modelscope.cn/api/v1/models/Comfy-Org/Qwen-Image-2.1/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "file_last_commit_revision": "5dc8a8352312860d67e07cc9bee310dc7ed3e55c",
+        "upstream_lfs_comparison": "魔搭与Hugging Face同名文件大小及SHA256一致；未下载权重。",
+        "runtime_docs": "https://github.com/leejet/stable-diffusion.cpp/blob/master-1006-0886f11/docs/qwen_image_2.1.md"
+      }
+    },
+    {
+      "id": "qwen21-vae",
+      "name": "Qwen 2.1 专属 RGBA VAE BF16",
+      "short_name": "Comfy-Org / Qwen 2.1 专属 RGBA VAE BF16",
+      "repo_id": "Comfy-Org/Qwen-Image-2.1",
+      "revision": "master",
+      "subdir": "images/Qwen-Image-2.1",
+      "bundle_dir": "images/Qwen-Image-2.1",
+      "precision": "BF16 safetensors，未量化",
+      "license": "Qwen Research License",
+      "license_url": "https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo/blob/main/LICENSE",
+      "license_notice": "Qwen Research License：限非商业研究或评估；商用须另获许可。格式转换不解除限制。",
+      "source_url": "https://modelscope.cn/models/Comfy-Org/Qwen-Image-2.1",
+      "enabled": true,
+      "include": [
+        "vae/qwen_image_2.1_vae_bf16.safetensors",
+        "README.md",
+        "LICENSE*"
+      ],
+      "disk_gb": 0.675509688,
+      "readiness": "verified_components_and_pinned_runtime_source_not_mac_tested",
+      "runtime": "stable-diffusion.cpp",
+      "requires": [],
+      "notes": "Qwen-Image-2.1-Turbo必要组件。编码器使用完整BF16 safetensors；VAE必须为2.1专属版本，不可替换成旧Qwen/Wan VAE。",
+      "expected_files": {
+        "vae/qwen_image_2.1_vae_bf16.safetensors": {
+          "bytes": 675509688,
+          "sha256": "bb21f7473051e1ac368515dd3f2e15cd44d7a11748ee8823e1ddca3e4876b7c9"
+        }
+      },
+      "component": true,
+      "group": "image_video",
+      "verification": {
+        "checked_at": "2026-10-21",
+        "files_api": "https://modelscope.cn/api/v1/models/Comfy-Org/Qwen-Image-2.1/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "file_last_commit_revision": "5dc8a8352312860d67e07cc9bee310dc7ed3e55c",
+        "upstream_lfs_comparison": "魔搭与Hugging Face同名文件大小及SHA256一致；未下载权重。",
+        "runtime_docs": "https://github.com/leejet/stable-diffusion.cpp/blob/master-1006-0886f11/docs/qwen_image_2.1.md"
+      }
+    },
+    {
+      "id": "krea2-turbo",
+      "name": "Krea 2 Turbo safetensors BF16（图像）",
+      "repo_id": "Comfy-Org/Krea-2",
+      "revision": "master",
+      "subdir": "images/Krea-2",
+      "precision": "BF16 / VAE 原始精度",
+      "license": "Krea 2 Community License",
+      "license_url": "https://modelscope.cn/models/Comfy-Org/Krea-2",
+      "license_notice": "组件许可独立；核对原作者许可，镜像可下载不代表已获商用/再分发授权。",
+      "source_url": "https://modelscope.cn/models/Comfy-Org/Krea-2",
+      "enabled": true,
+      "include": [
+        "diffusion_models/krea2_turbo_bf16.safetensors",
+        "README.md",
+        "LICENSE*"
+      ],
+      "disk_gb": 26.283332608,
+      "readiness": "verified_components_not_mac_tested",
+      "requires": [
+        "krea2-text",
+        "wan21-vae"
+      ],
+      "notes": "Turbo 效率变体；自动补齐指定文本编码器及 VAE，整套位于同一目录。仅保留 Turbo，不提供 Raw 选择。",
+      "expected_files": {
+        "diffusion_models/krea2_turbo_bf16.safetensors": {
+          "bytes": 26283332608,
+          "sha256": "78bbf8f4165eda19cea3cb06c78089221932a39e2eed8af9da741f942c47ffb3"
+        }
+      },
+      "component": false,
+      "group": "image_video",
+      "short_name": "Comfy-Org / Krea 2 Turbo safetensors BF16（图像）",
+      "bundle_dir": "images/Krea-2",
+      "runtime": "stable-diffusion.cpp"
+    },
+    {
+      "id": "krea2-text",
+      "name": "Krea 2 Qwen3-VL 4B 文本编码器",
+      "repo_id": "Comfy-Org/Krea-2",
+      "revision": "master",
+      "subdir": "images/Krea-2",
+      "precision": "BF16 / VAE 原始精度",
+      "license": "See upstream license",
+      "license_url": "https://modelscope.cn/models/Comfy-Org/Krea-2",
+      "license_notice": "组件许可独立；核对原作者许可，镜像可下载不代表已获商用/再分发授权。",
+      "source_url": "https://modelscope.cn/models/Comfy-Org/Krea-2",
+      "enabled": true,
+      "include": [
+        "text_encoders/qwen3vl_4b_bf16.safetensors",
+        "README.md",
+        "LICENSE*"
+      ],
+      "disk_gb": 8.875719384,
+      "readiness": "verified_components_not_mac_tested",
+      "requires": [],
+      "notes": "Krea 2 Turbo 必要组件；不得拿普通大模型目录代替指定文本编码器。",
+      "expected_files": {
+        "text_encoders/qwen3vl_4b_bf16.safetensors": {
+          "bytes": 8875719384,
+          "sha256": "36f3ff447ef59201722e8f9ce6020c9819fdcfba6aa2608c4e09b1c0ce114e34"
+        }
+      },
+      "component": true,
+      "group": "image_video",
+      "runtime": "stable-diffusion.cpp"
+    },
+    {
+      "id": "wan21-vae",
+      "name": "Krea 2 所需 Wan2.1 VAE",
+      "repo_id": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+      "revision": "master",
+      "subdir": "images/Krea-2/dependencies/Wan_2.1_ComfyUI_repackaged",
+      "precision": "BF16 / VAE 原始精度",
+      "license": "See upstream license",
+      "license_url": "https://modelscope.cn/models/Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+      "license_notice": "组件许可独立；核对原作者许可，镜像可下载不代表已获商用/再分发授权。",
+      "source_url": "https://modelscope.cn/models/Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+      "enabled": true,
+      "include": [
+        "split_files/vae/wan_2.1_vae.safetensors",
+        "README.md",
+        "LICENSE*"
+      ],
+      "disk_gb": 0.253815318,
+      "readiness": "verified_components_not_mac_tested",
+      "requires": [],
+      "notes": "仅图像模型所需共享VAE，不引入Wan视频模型。",
+      "expected_files": {
+        "split_files/vae/wan_2.1_vae.safetensors": {
+          "bytes": 253815318,
+          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b"
+        }
+      },
+      "component": true,
+      "group": "image_video",
+      "runtime": "stable-diffusion.cpp"
+    },
+    {
+      "id": "asr-qwen3-1.7b-f16",
+      "name": "Qwen3-ASR-1.7B F16",
+      "repo_id": "HereIsMark/audio.cpp-gguf",
+      "revision": "master",
+      "subdir": "audio",
+      "precision": "F16",
+      "license": "Apache-2.0 (original model)",
+      "notes": "当前魔搭 F16 权重及旧核验版本均可识别；下载复用必须匹配对应大小和 SHA256，不因上游更新重下已验证旧文件。适用于 audio.cpp，尚未在本机推理。",
+      "source_url": "https://www.modelscope.cn/models/HereIsMark/audio.cpp-gguf",
+      "enabled": true,
+      "include": [
+        "Qwen3-ASR-1.7B-GGUF/qwen3-asr-1.7b-f16.gguf",
+        "README.md"
+      ],
+      "disk_gb": 4.0877,
+      "verified_size_bytes": 4087660800,
+      "sha256": "59baf62f2454a1b4d1d9ffed730dbf1d0bce28ed6fec30897de17f9d6d452fc3",
+      "runtime": "audio.cpp",
+      "readiness": "verified_audio_cpp_header_not_mac_tested",
+      "license_url": "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf",
+      "license_notice": "原模型 Apache-2.0；已核查社区镜像包头含规格与附件，版本兼容及推理仍需本机验证。",
+      "expected_files": {
+        "Qwen3-ASR-1.7B-GGUF/qwen3-asr-1.7b-f16.gguf": {
+          "bytes": 4087660800,
+          "sha256": "59baf62f2454a1b4d1d9ffed730dbf1d0bce28ed6fec30897de17f9d6d452fc3",
+          "compatible_versions": [
+            {
+              "bytes": 4087653248,
+              "sha256": "f12537d4ea56df4e1dcca64a902e0b37fb1111f8ef7fc8e554fd00110be047d0"
+            }
+          ]
+        }
+      },
+      "component": false,
+      "group": "audio",
+      "short_name": "HereIsMark / Qwen3-ASR 1.7B GGUF F16（语音识别）",
+      "bundle_dir": "audio/Qwen3-ASR-1.7B-GGUF",
+      "legacy_subdirs": [
+        "audio/audio.cpp-gguf"
+      ],
+      "verification": {
+        "checked_at": "2026-10-25",
+        "files_api": "https://modelscope.cn/api/v1/models/HereIsMark/audio.cpp-gguf/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "validation": "重新核对当前文件大小和 SHA256；旧已核验版本保留兼容。未做本机推理。",
+        "file_revision": "8a9bd3309e2222b1b2a3fb2ca436f5a32d284b7b"
+      }
+    },
+    {
+      "id": "music3-mlx-bf16",
+      "name": "Music3 MLX完整原精度目标（魔搭镜像未核实）",
+      "repo_id": null,
+      "enabled": false,
+      "precision": "BF16/F32",
+      "source_url": "https://huggingface.co/mlx-community/MiniMax-Music3-bf16",
+      "readiness": "modelscope_mirror_unverified",
+      "notes": "只作来源对照，不能选择下载；不猜测同名魔搭仓库，不自动切换HF。",
+      "component": false,
+      "group": "audio"
+    },
+    {
+      "id": "h3-mlx-8bit",
+      "name": "MiniMax-H3-FL2VA-MLX-Serve-8bit（视频·首尾帧）",
+      "repo_id": "ddalcu/MiniMax-H3-FL2VA-MLX-Serve-8bit",
+      "enabled": true,
+      "precision": "MLX 8 位混合精度；不是原始满精度",
+      "source_url": "https://modelscope.cn/models/ddalcu/MiniMax-H3-FL2VA-MLX-Serve-8bit",
+      "readiness": "verified_mlx_serve_layout_not_mac_tested",
+      "notes": "支持文字/首尾帧生成音视频，不支持ref_audios；含本变体Turbo LoRA。同族文件仅SHA256及字节数匹配才共享；两个transformer不同必须各下载。",
+      "component": false,
+      "group": "image_video",
+      "revision": "caa4d86c9770a97ff35a610aa5dfcd63d0e2815a",
+      "short_name": "ddalcu/MiniMax-H3-FL2VA-MLX-Serve-8bit（视频·首尾帧）",
+      "subdir": "video/MiniMax-H3-FL2VA-MLX-Serve-8bit",
+      "disk_gb": 70.076153374,
+      "verified_size_bytes": 70076153374,
+      "runtime": "ddalcu/mlx-serve",
+      "requires": [],
+      "include": [
+        ".gitattributes",
+        "LICENSE",
+        "MODIFICATIONS.md",
+        "NOTICE",
+        "README.md",
+        "audio_vae.safetensors",
+        "config.json",
+        "configuration.json",
+        "merges.txt",
+        "text_encoder.safetensors",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "transformer.safetensors",
+        "turbo_lora.safetensors",
+        "video_vae.safetensors",
+        "vocab.json"
+      ],
+      "expected_files": {
+        ".gitattributes": {
+          "bytes": 2229,
+          "sha256": "ea531a2287d6df7b3d3760738c1d10289568afe669efd9fe34f54ffe5e76e937"
+        },
+        "LICENSE": {
+          "bytes": 17604,
+          "sha256": "59b99642b95ea21630e311198ddbfffbfe05aadba0c2f5d884cbdf4efcc90f44"
+        },
+        "MODIFICATIONS.md": {
+          "bytes": 1630,
+          "sha256": "3439a033d427a8b3225640fad4dc76787496982ee4565deafc556852a7af902a"
+        },
+        "NOTICE": {
+          "bytes": 552,
+          "sha256": "3ea3c60ee64954fc0898e68b7534e3613ba74586256aec6edad557b7f217c7c6"
+        },
+        "README.md": {
+          "bytes": 3310,
+          "sha256": "4d46d7fd915de674ef69b99b94255c9af4454145f7855592abce32c1c7d5346d"
+        },
+        "audio_vae.safetensors": {
+          "bytes": 605254808,
+          "sha256": "8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48"
+        },
+        "config.json": {
+          "bytes": 724,
+          "sha256": "add27928e87c54c6a88901d8a8c177df47691661e455f6747bc8916cee6149ec"
+        },
+        "configuration.json": {
+          "bytes": 71,
+          "sha256": "8f2d68f7d73338e74ba0a593bbdacfefa31e9a68629bc219da0935b3c24011b4"
+        },
+        "merges.txt": {
+          "bytes": 1671839,
+          "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3"
+        },
+        "text_encoder.safetensors": {
+          "bytes": 28222741760,
+          "sha256": "79514b061aa0acbeb802bbe37e4853f1b0d0e6fe7fad4f61624057201773bf56"
+        },
+        "tokenizer.json": {
+          "bytes": 7032403,
+          "sha256": "a5d85b6dcc535e6b93115a9ef287e6132fdbf30270da6218194ba742261173c7"
+        },
+        "tokenizer_config.json": {
+          "bytes": 11003,
+          "sha256": "a07e942ac874baa13758de8d1fbdb186683cc03416b5589e1b6671c6b3057c68"
+        },
+        "transformer.safetensors": {
+          "bytes": 35248980296,
+          "sha256": "eb619c2537c3557aeb94cfcc63754bccf63e3942401ad541104d059b073fdb76"
+        },
+        "turbo_lora.safetensors": {
+          "bytes": 779849816,
+          "sha256": "5a6eeba171cf183020a4ad48774bb2968f29f8168afd6ec17a04987f3528b4ea"
+        },
+        "video_vae.safetensors": {
+          "bytes": 5207808496,
+          "sha256": "7c1f131492e7eddacaac9069a61b81bdd39de5cc96561e677c5eab1cdce5e522"
+        },
+        "vocab.json": {
+          "bytes": 2776833,
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+        }
+      },
+      "license_url": "https://modelscope.cn/models/ddalcu/MiniMax-H3-FL2VA-MLX-Serve-8bit/resolve/caa4d86c9770a97ff35a610aa5dfcd63d0e2815a/LICENSE",
+      "license": "MiniMax H3 Community License Agreement",
+      "license_notice": "许可地域排除欧盟、英国、韩国、美国；输出及商用亦有约束，请自行审核所在地和用途。",
+      "verification": {
+        "checked_at": "2026-10-21",
+        "files_api": "https://modelscope.cn/api/v1/models/ddalcu/MiniMax-H3-FL2VA-MLX-Serve-8bit/repo/files?Revision=caa4d86c9770a97ff35a610aa5dfcd63d0e2815a&Recursive=true",
+        "revision_is_mutable": false,
+        "validation": "固定提交完整文件树与SHA256/字节数已核查，未下载权重或在Mac实测。"
+      },
+      "reuse_family": "minimax-h3-mlx-serve"
+    },
+    {
+      "id": "h3-ref2va-mlx-8bit",
+      "name": "MiniMax-H3-REF2VA-MLX-Serve-8bit（视频·音视频参考）",
+      "repo_id": "ddalcu/MiniMax-H3-REF2VA-MLX-Serve-8bit",
+      "enabled": true,
+      "precision": "MLX 8 位混合精度；不是原始满精度",
+      "source_url": "https://modelscope.cn/models/ddalcu/MiniMax-H3-REF2VA-MLX-Serve-8bit",
+      "readiness": "verified_mlx_serve_layout_not_mac_tested",
+      "notes": "支持图片、视频、WAV音频参考，API ref_audios；本魔搭快照不含Turbo LoRA，不复用FL2VA适配器。同族文件仅SHA256及字节数匹配才共享；两个transformer不同必须各下载。",
+      "component": false,
+      "group": "image_video",
+      "revision": "10283766961b5c4015d0ea1f9e12b915b634360d",
+      "short_name": "ddalcu/MiniMax-H3-REF2VA-MLX-Serve-8bit（视频·音视频参考）",
+      "subdir": "video/MiniMax-H3-REF2VA-MLX-Serve-8bit",
+      "disk_gb": 69.296302685,
+      "verified_size_bytes": 69296302685,
+      "runtime": "ddalcu/mlx-serve",
+      "requires": [],
+      "include": [
+        ".gitattributes",
+        "LICENSE",
+        "MODIFICATIONS.md",
+        "NOTICE",
+        "README.md",
+        "audio_vae.safetensors",
+        "config.json",
+        "configuration.json",
+        "merges.txt",
+        "text_encoder.safetensors",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "transformer.safetensors",
+        "video_vae.safetensors",
+        "vocab.json"
+      ],
+      "expected_files": {
+        ".gitattributes": {
+          "bytes": 2229,
+          "sha256": "ea531a2287d6df7b3d3760738c1d10289568afe669efd9fe34f54ffe5e76e937"
+        },
+        "LICENSE": {
+          "bytes": 17604,
+          "sha256": "59b99642b95ea21630e311198ddbfffbfe05aadba0c2f5d884cbdf4efcc90f44"
+        },
+        "MODIFICATIONS.md": {
+          "bytes": 1107,
+          "sha256": "30176e7b10deb8c369ede038f13f3676a67d5c6f508e5e77c26f5ce25c059a6e"
+        },
+        "NOTICE": {
+          "bytes": 121,
+          "sha256": "154fe7fbdf198395d53c57d6786b2fbf7e63a083ff70843c5ef78c0c7303d91a"
+        },
+        "README.md": {
+          "bytes": 3167,
+          "sha256": "53cbddd8ec75698d5197573e91bd69b111c9462c228bd2a2e7bfc30b0ea1e144"
+        },
+        "audio_vae.safetensors": {
+          "bytes": 605254808,
+          "sha256": "8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48"
+        },
+        "config.json": {
+          "bytes": 726,
+          "sha256": "44be4dab923f105d708785ed4715e47eade37fe74f5c0a902c862aa6075a8265"
+        },
+        "configuration.json": {
+          "bytes": 71,
+          "sha256": "8f2d68f7d73338e74ba0a593bbdacfefa31e9a68629bc219da0935b3c24011b4"
+        },
+        "merges.txt": {
+          "bytes": 1671839,
+          "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3"
+        },
+        "text_encoder.safetensors": {
+          "bytes": 28222741760,
+          "sha256": "79514b061aa0acbeb802bbe37e4853f1b0d0e6fe7fad4f61624057201773bf56"
+        },
+        "tokenizer.json": {
+          "bytes": 7032403,
+          "sha256": "a5d85b6dcc535e6b93115a9ef287e6132fdbf30270da6218194ba742261173c7"
+        },
+        "tokenizer_config.json": {
+          "bytes": 11003,
+          "sha256": "a07e942ac874baa13758de8d1fbdb186683cc03416b5589e1b6671c6b3057c68"
+        },
+        "transformer.safetensors": {
+          "bytes": 35248980518,
+          "sha256": "76a2003f331c1230ccb149ba3bb8275ace458d64bd19f2f0e4dfabedd1740bf8"
+        },
+        "video_vae.safetensors": {
+          "bytes": 5207808496,
+          "sha256": "7c1f131492e7eddacaac9069a61b81bdd39de5cc96561e677c5eab1cdce5e522"
+        },
+        "vocab.json": {
+          "bytes": 2776833,
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+        }
+      },
+      "license_url": "https://modelscope.cn/models/ddalcu/MiniMax-H3-REF2VA-MLX-Serve-8bit/resolve/10283766961b5c4015d0ea1f9e12b915b634360d/LICENSE",
+      "license": "MiniMax H3 Community License Agreement",
+      "license_notice": "许可地域排除欧盟、英国、韩国、美国；输出及商用亦有约束，请自行审核所在地和用途。",
+      "verification": {
+        "checked_at": "2026-10-21",
+        "files_api": "https://modelscope.cn/api/v1/models/ddalcu/MiniMax-H3-REF2VA-MLX-Serve-8bit/repo/files?Revision=10283766961b5c4015d0ea1f9e12b915b634360d&Recursive=true",
+        "revision_is_mutable": false,
+        "validation": "固定提交完整文件树与SHA256/字节数已核查，未下载权重或在Mac实测。"
+      },
+      "reuse_family": "minimax-h3-mlx-serve"
+    },
+    {
+      "id": "music3-mlx-8bit",
+      "name": "MiniMax-Music3-MLX-Serve-8bit（音乐）",
+      "repo_id": "ddalcu/MiniMax-Music3-MLX-Serve-8bit",
+      "enabled": true,
+      "precision": "MLX 8 位混合精度；不是原始满精度",
+      "source_url": "https://modelscope.cn/models/ddalcu/MiniMax-Music3-MLX-Serve-8bit",
+      "readiness": "verified_mlx_serve_layout_not_mac_tested",
+      "notes": "已核查魔搭文件树、README 和配置，为 ddalcu/mlx-serve 专用转换包；完整组件一并下载，不需要自行先转换。8bit 不是满精度，未在本机实测；master 可变，下载后核对快照。",
+      "component": false,
+      "group": "audio",
+      "revision": "master",
+      "short_name": "ddalcu/MiniMax-Music3-MLX-Serve-8bit（音乐）",
+      "subdir": "music/MiniMax-Music3-MLX-Serve-8bit",
+      "disk_gb": 13.55290439,
+      "verified_size_bytes": 13552904390,
+      "runtime": "ddalcu/mlx-serve",
+      "requires": [],
+      "include": [
+        ".gitattributes",
+        "LICENSE",
+        "README.md",
+        "condition_encoder.safetensors",
+        "config.json",
+        "configuration.json",
+        "language_model.safetensors",
+        "music_tokenizer/added_tokens.json",
+        "music_tokenizer/merges.txt",
+        "music_tokenizer/special_tokens_map.json",
+        "music_tokenizer/tokenizer.json",
+        "music_tokenizer/tokenizer_config.json",
+        "music_tokenizer/vocab.json",
+        "rvq_depth_decoder.safetensors",
+        "tokenizer/chat_template.jinja",
+        "tokenizer/tokenizer.json",
+        "tokenizer/tokenizer_config.json",
+        "transformer.safetensors",
+        "vocoder.safetensors"
+      ],
+      "expected_files": {
+        ".gitattributes": {
+          "bytes": 2341,
+          "sha256": "5fddfd492cd7b511c5c2fb0a1374b10d065be5f18ba4f4e1d33576753317c75d"
+        },
+        "LICENSE": {
+          "bytes": 7373,
+          "sha256": "b21d12df2adae59dad3fcf80c1d81492654c662342f497d9a9770198c9317e58"
+        },
+        "README.md": {
+          "bytes": 2741,
+          "sha256": "0f8e1f32f2fc923adce8b075b30d3140b59e85d44b562a93f9d3ba8b32cfd2c1"
+        },
+        "condition_encoder.safetensors": {
+          "bytes": 100671864,
+          "sha256": "ba4587728bd7ab700d5c12d2a38f4dc5af63d43091b3ed796a9d3e190c2ff7c8"
+        },
+        "config.json": {
+          "bytes": 1589,
+          "sha256": "c15be3279fcbf2e6e63f618ca1e01b938429657a9e242d2a7925eb3e6850b190"
+        },
+        "configuration.json": {
+          "bytes": 71,
+          "sha256": "3eefed50f26939655a89fcb85efb21acbe4b0fe470f9f61146092fdd83c8d894"
+        },
+        "language_model.safetensors": {
+          "bytes": 9889398049,
+          "sha256": "b0c10335dfc0f591f5a139ff40bcfd21614932dee8d91d5433c9995d1bbcf001"
+        },
+        "music_tokenizer/added_tokens.json": {
+          "bytes": 880,
+          "sha256": "8ea09aef968f06df57779729ea9acc7e0627478867f9a9c63f6f06cc4ba5c72b"
+        },
+        "music_tokenizer/merges.txt": {
+          "bytes": 1671853,
+          "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+        },
+        "music_tokenizer/special_tokens_map.json": {
+          "bytes": 612,
+          "sha256": "c68a707555b529224301378ddaad40f06a59f736ff78fb6115b456778e3bbbf1"
+        },
+        "music_tokenizer/tokenizer.json": {
+          "bytes": 11423806,
+          "sha256": "bc63169ebf49c476995ced3f3dbae68f93ed9cf2a2997d3658863672f2f05f0f"
+        },
+        "music_tokenizer/tokenizer_config.json": {
+          "bytes": 10853,
+          "sha256": "2129b1d2e24dccffd74a7232259e486b0a59db26a07e18d59609f2952ef9a1fb"
+        },
+        "music_tokenizer/vocab.json": {
+          "bytes": 2776833,
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+        },
+        "rvq_depth_decoder.safetensors": {
+          "bytes": 714034740,
+          "sha256": "234216889a463e0a34317ef854fb1677d62515ee66cac2c0ef011ebcd0cd5dfe"
+        },
+        "tokenizer/chat_template.jinja": {
+          "bytes": 4168,
+          "sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+        },
+        "tokenizer/tokenizer.json": {
+          "bytes": 11423801,
+          "sha256": "b1537fa9e59a537276ecbc2e12d0438edff635a1f4a4948e679774b5feb3e610"
+        },
+        "tokenizer/tokenizer_config.json": {
+          "bytes": 377,
+          "sha256": "1689852cc9c45010de040c8302a8acdc0d2c4c6c740dd7e9dd0a8c704e16eada"
+        },
+        "transformer.safetensors": {
+          "bytes": 2604777324,
+          "sha256": "a856fb45e76e868d190d82b63cbf4fa2e5122a98763d5b743e3d14a3f4a0ca6c"
+        },
+        "vocoder.safetensors": {
+          "bytes": 216695115,
+          "sha256": "a1e8c2a251b29f551df6bd7ae7eb5f7e1484ac7e1b8f67f3cc5cc7b8395777f5"
+        }
+      },
+      "license_url": "https://modelscope.cn/models/ddalcu/MiniMax-Music3-MLX-Serve-8bit/resolve/master/LICENSE",
+      "license": "MiniMax-Music3 Community License",
+      "license_notice": "自定义社区许可；商用署名、收入门槛、托管保障等条件需自行审核。",
+      "verification": {
+        "checked_at": "2026-10-20",
+        "files_api": "https://modelscope.cn/api/v1/models/ddalcu/MiniMax-Music3-MLX-Serve-8bit/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "validation": "已核查完整文件树与 README/config；未实际在 Mac 下载或推理。"
+      }
+    },
+    {
+      "id": "qwen38-flash-next-8bit",
+      "name": "Qwen3.8-Flash-Next-MLX-Serve-8bit（大模型）",
+      "repo_id": "ddalcu/Qwen3.8-Flash-Next-MLX-Serve-8bit",
+      "revision": "master",
+      "subdir": "llm/Qwen3.8-Flash-Next-MLX-Serve-8bit",
+      "precision": "MLX 仿射 8 位量化、每组 64；n-gram 8 位量化、每组 32；视觉及部分结构 BF16",
+      "license": "Qwen Community License 1.0",
+      "license_url": "https://modelscope.cn/models/ddalcu/Qwen3.8-Flash-Next-MLX-Serve-8bit/file/view/master/LICENSE",
+      "license_notice": "模型许可独立于工具包 MIT；下载前核对仓库 LICENSE 及上游 Qwen 条款。",
+      "source_url": "https://modelscope.cn/models/ddalcu/Qwen3.8-Flash-Next-MLX-Serve-8bit",
+      "enabled": true,
+      "include": [
+        ".gitattributes",
+        "LICENSE",
+        "README.md",
+        "chat_template.jinja",
+        "config.json",
+        "configuration.json",
+        "generation_config.json",
+        "merges.txt",
+        "model-00001.safetensors",
+        "model-00002.safetensors",
+        "model-00003.safetensors",
+        "model-00004.safetensors",
+        "model-00005.safetensors",
+        "model-00006.safetensors",
+        "model-00007.safetensors",
+        "model-00008.safetensors",
+        "model-00009.safetensors",
+        "model-00010.safetensors",
+        "model-00011.safetensors",
+        "model-00012.safetensors",
+        "model-00013.safetensors",
+        "model-00014.safetensors",
+        "model-00015.safetensors",
+        "model-00016.safetensors",
+        "model-00017.safetensors",
+        "model-00018.safetensors",
+        "model-00019.safetensors",
+        "model-00020.safetensors",
+        "model-00021.safetensors",
+        "model-00022.safetensors",
+        "model-00023.safetensors",
+        "model-00024.safetensors",
+        "model-00025.safetensors",
+        "model-00026.safetensors",
+        "model-00027.safetensors",
+        "model-00028.safetensors",
+        "model-00029.safetensors",
+        "model-00030.safetensors",
+        "model-00031.safetensors",
+        "model-00032.safetensors",
+        "model-00033.safetensors",
+        "model-00034.safetensors",
+        "model-00035.safetensors",
+        "model-00036.safetensors",
+        "model-00037.safetensors",
+        "model-00038.safetensors",
+        "model-00039.safetensors",
+        "model-00040.safetensors",
+        "model-00041.safetensors",
+        "model-00042.safetensors",
+        "model-00043.safetensors",
+        "model-00044.safetensors",
+        "model-00045.safetensors",
+        "model-00046.safetensors",
+        "model-00047.safetensors",
+        "model-00048.safetensors",
+        "model-00049.safetensors",
+        "model-00050.safetensors",
+        "model-00051.safetensors",
+        "model-00052.safetensors",
+        "model-00053.safetensors",
+        "model-00054.safetensors",
+        "model-00055.safetensors",
+        "model-00056.safetensors",
+        "model-00057.safetensors",
+        "model-00058.safetensors",
+        "model-00059.safetensors",
+        "model-00060.safetensors",
+        "model-00061.safetensors",
+        "model-00062.safetensors",
+        "model-00063.safetensors",
+        "model-00064.safetensors",
+        "model-00065.safetensors",
+        "model-00066.safetensors",
+        "model-00067.safetensors",
+        "model-00068.safetensors",
+        "model-00069.safetensors",
+        "model-00070.safetensors",
+        "model-00071.safetensors",
+        "model-00072.safetensors",
+        "model-00073.safetensors",
+        "model-00074.safetensors",
+        "model-00075.safetensors",
+        "model-00076.safetensors",
+        "model-00077.safetensors",
+        "model-00078.safetensors",
+        "model-00079.safetensors",
+        "model-00080.safetensors",
+        "model-00081.safetensors",
+        "model-00082.safetensors",
+        "model-00083.safetensors",
+        "model-00084.safetensors",
+        "model-00085.safetensors",
+        "model-00086.safetensors",
+        "model-00087.safetensors",
+        "model-00088.safetensors",
+        "model-00089.safetensors",
+        "model-00090.safetensors",
+        "model-00091.safetensors",
+        "model-00092.safetensors",
+        "model-00093.safetensors",
+        "model-00094.safetensors",
+        "model-00095.safetensors",
+        "model-00096.safetensors",
+        "model-00097.safetensors",
+        "model-00098.safetensors",
+        "model-00099.safetensors",
+        "model-00100.safetensors",
+        "model-vision.safetensors",
+        "model.safetensors.index.json",
+        "ngram_table.bin",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "vocab.json"
+      ],
+      "disk_gb": 194.900880527,
+      "readiness": "verified_mlx_serve_layout_not_mac_tested",
+      "requires": [],
+      "notes": "仅手动选择；完整 194.90GB 仓库，MTP 内嵌主分片，57.60GB ngram_table.bin 不省略。BF16 转仿射 8 位量化，不是官方 FP8 原样。专用 ddalcu/mlx-serve 布局；磁盘体积不是运行内存。master 可变，下载后须按核查快照校验，推荐 --sha256。",
+      "expected_files": {
+        ".gitattributes": {
+          "bytes": 2179,
+          "sha256": "6e0d4a1b0ac7a815d39ab2aedbb6e5695c9688b440104c0976bc06cb7fd079bf"
+        },
+        "LICENSE": {
+          "bytes": 3235,
+          "sha256": "a0dc422560841fd68e06d974907f8b4c709bca44a67daad2b528437bdf676c08"
+        },
+        "README.md": {
+          "bytes": 5134,
+          "sha256": "51d661d3dc003da755129342a8538875b14efdcaa704b365f6977a56337505eb"
+        },
+        "chat_template.jinja": {
+          "bytes": 8952,
+          "sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041"
+        },
+        "config.json": {
+          "bytes": 4291,
+          "sha256": "3b75deecf2341a23fdd46e0eb36c9ff3c4f4f9d3ff89656c5c5cca142c0824a7"
+        },
+        "configuration.json": {
+          "bytes": 73,
+          "sha256": "f888421726665e8a84b738eed42a64875aed79de8be7daade851ac8bf4c0cef9"
+        },
+        "generation_config.json": {
+          "bytes": 202,
+          "sha256": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e"
+        },
+        "merges.txt": {
+          "bytes": 3353259,
+          "sha256": "a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d"
+        },
+        "model-00001.safetensors": {
+          "bytes": 75673848,
+          "sha256": "b9eac6559ad5d0e36f481a28fb7242129f3448966d9feb25daba67a5ea704aea"
+        },
+        "model-00002.safetensors": {
+          "bytes": 1782580096,
+          "sha256": "d3a825fa1c97500b41ed081680e1aa0b2e40bcec779ecfcaf98ff8dd0ae0cfdc"
+        },
+        "model-00003.safetensors": {
+          "bytes": 973668128,
+          "sha256": "937d51e0540cdbd4917d50e9af970e3dc3479149311a181194ef1760d3b83ad3"
+        },
+        "model-00004.safetensors": {
+          "bytes": 1782580096,
+          "sha256": "474a3e5d93eac290eec8c447432bad952bc6641c39f994b8bceb5354e3a05c08"
+        },
+        "model-00005.safetensors": {
+          "bytes": 932894136,
+          "sha256": "b9231d24c4e75d3dee34ea5220d0a9af5d0f3f7fe57a9949dec1128d0e5aad29"
+        },
+        "model-00006.safetensors": {
+          "bytes": 75755944,
+          "sha256": "a66bcbcd3aa72c26c72f61d6e2d0e96548743c29cfe23821ca252d06bf1faf2a"
+        },
+        "model-00007.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "357df84cb5492cbe7a607f0dd02c64ee63a72ba47da2a8833bee575addb5231c"
+        },
+        "model-00008.safetensors": {
+          "bytes": 912045856,
+          "sha256": "af059af1f96a8384707e6d6ddfc7673276c78196d6107d4c5b0f378e820cb6d1"
+        },
+        "model-00009.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "a4d9918cdfcdf7c9253864b2c2de9493ab433915f7e201787306ea90a5b440c0"
+        },
+        "model-00010.safetensors": {
+          "bytes": 1031815584,
+          "sha256": "f7e8ab24de966890044e9c9f052628a15b32d3b610df599ceef3ef3506fc24d0"
+        },
+        "model-00011.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "9b788167a4d3e2519609c0cb88e4ba32f9cdc63dd01daf34225b05128b41d3cf"
+        },
+        "model-00012.safetensors": {
+          "bytes": 977150232,
+          "sha256": "cb576af2920f37aeb1127ccd4c97ea882c130512a7765a9553780cb2f7a4dc9a"
+        },
+        "model-00013.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "1dce7230e19edf676ea03a298475a63b2d9f26f9a75f52d46738e7cbb2f66f50"
+        },
+        "model-00014.safetensors": {
+          "bytes": 973668176,
+          "sha256": "2429960309f83e3bd9ab7ed816b4603618dee7ca7b19084cfb22a6d10bfc0891"
+        },
+        "model-00015.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "3f3fd1ee7f303b20068d4b4d0db44e3c4d7a18b97f9815bccf4bac2a48f07a2c"
+        },
+        "model-00016.safetensors": {
+          "bytes": 912127936,
+          "sha256": "0e0481bdbd406694281ccbf8a5e72aa64418f1f1b856474b21df9bce5c70686a"
+        },
+        "model-00017.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "b634e60694989b1cdb4e44d2c1bc678191ebf0e3021e0331ddbafc403cb2c9f8"
+        },
+        "model-00018.safetensors": {
+          "bytes": 1028354136,
+          "sha256": "ca1724ae1f526a402f1ec6b4b8d2075df16eb960ea7cb0bfcc4132f4cf764d34"
+        },
+        "model-00019.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "cb7856b372a2a6529379d99989b2e83d5d49f48120adfc7d09382c611d9d5090"
+        },
+        "model-00020.safetensors": {
+          "bytes": 973668176,
+          "sha256": "ed50836aed0def4acb1ca65d6b494ce477f3d746e2723e7b8af75f93f6629fbb"
+        },
+        "model-00021.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "388b5d3142c1ccbae9193fdc1b8b8bfa7188a563e68b3913d3be3ab1c9b22e43"
+        },
+        "model-00022.safetensors": {
+          "bytes": 977150264,
+          "sha256": "9698b0743d678e0072fb511173fd1ffbb592deeafdae06916df78ce4a2e10225"
+        },
+        "model-00023.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "f4b12d8b328d764e43c2025c6ed450b236da33a9d6023aecc8b60cdd484ed077"
+        },
+        "model-00024.safetensors": {
+          "bytes": 912045856,
+          "sha256": "6566d98866d6411aab51eb39bb7efa8abe175c6dab00dcb52c8d0997bfc2093e"
+        },
+        "model-00025.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "2e6790c171fa1898b2fd8a50e4d0f94df4b61c27bed40367196a52374a98988f"
+        },
+        "model-00026.safetensors": {
+          "bytes": 1031815568,
+          "sha256": "ee8db6453bbb7521c5a65f769099ee94deab1521ec80d7656612c5002a824e80"
+        },
+        "model-00027.safetensors": {
+          "bytes": 1782580096,
+          "sha256": "0098894c629853dc091b3d21c40c88b382bf1764f0d2558e5fe99fc7e31fdb50"
+        },
+        "model-00028.safetensors": {
+          "bytes": 912046056,
+          "sha256": "a61b528a42781b7e1da405fb904999e2d06ce2e2f256d6ddc90a0d9b45bab65a"
+        },
+        "model-00029.safetensors": {
+          "bytes": 1844202112,
+          "sha256": "30428e4e7eb465e8479848c0a8247c800e0b97afbb7babb3a3b41490c306f495"
+        },
+        "model-00030.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "0a3504f10051db9fe8a227796a4ead43c9e415a1af3887403f6470dc7a34e6ce"
+        },
+        "model-00031.safetensors": {
+          "bytes": 1864958224,
+          "sha256": "a1ea8c19d5caee89518fb6d932b8e16a147abb240cfe93d43c21e36c7b20f6f9"
+        },
+        "model-00032.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "8f0d570d22f8bab336e9ac51d427e3e717d968080da5aa69714f449fbc0a5437"
+        },
+        "model-00033.safetensors": {
+          "bytes": 973668176,
+          "sha256": "0afc3f59676944f56899896ea5dda986ecd8d6322956f7c6719e6a3afa99cb13"
+        },
+        "model-00034.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "fd7aff905e17311b305059cd359769d521e3d1077a47040748e8605a4aa7b313"
+        },
+        "model-00035.safetensors": {
+          "bytes": 913438872,
+          "sha256": "5d67cea76b56ab06f02e42fd98614ba8d1884881b7faf57756b36c60027d42fe"
+        },
+        "model-00036.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "968d2e60cc276bb20a59caad88067e2df4dcde58c4cb1a734fea4b7ef72b9ea4"
+        },
+        "model-00037.safetensors": {
+          "bytes": 1028333512,
+          "sha256": "295bc0db414d0c3d0ac01be6577abdcf1d1fc72bc7c5cf34a3fef4f5e6b8d070"
+        },
+        "model-00038.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "8b77772472b2b0efb85b4060dcdea29b9d2af0e1b95d885dc74a9592304c7119"
+        },
+        "model-00039.safetensors": {
+          "bytes": 973673432,
+          "sha256": "3864453eb8f09d57b14f53b76afe9593aa6d71408522e56bb75833830a70702c"
+        },
+        "model-00040.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "aa4dd6be99f0971a9a4a7c069f762f60c04f09238d363e8fc09a001d697215f7"
+        },
+        "model-00041.safetensors": {
+          "bytes": 977150640,
+          "sha256": "31ea04577ddb173d494d0583adeed2fe01a865cf725303c5dafdf2a1f61911e3"
+        },
+        "model-00042.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "7f701d5d8ebe1c2e7411fdf159c762ad520a79a60b8a992adb7a40201461aa46"
+        },
+        "model-00043.safetensors": {
+          "bytes": 912045856,
+          "sha256": "e659fb02ca1c6b6a3a70bbb00b4dddcd41dfedc55b9b271e7626b7c86e016e2c"
+        },
+        "model-00044.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "0f870934b269ae9b46727ceaf80acd0e13043e0f1fdc4d5109b6811ec876eab3"
+        },
+        "model-00045.safetensors": {
+          "bytes": 1030074760,
+          "sha256": "8e6641ecd1a48423493f0ca329bb2aed7a46b8d8c0f883e8ec32c3a3568da9da"
+        },
+        "model-00046.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "43dbd09c808f8a36867f4e6d1cb17fb56cc5770bede42352d72d87452c0e9ac0"
+        },
+        "model-00047.safetensors": {
+          "bytes": 973750256,
+          "sha256": "a6743945f81d3dfd58e1fcd2380ee41d25344bac6d6c307292fcf7f50f6b9e73"
+        },
+        "model-00048.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "f3dd21bbcf1bc40a2c6bfe0bb85f1e109240656adba034ba6a1f4e48f8519c25"
+        },
+        "model-00049.safetensors": {
+          "bytes": 912045848,
+          "sha256": "3e9fdc63ad5905cedb7aad3d8f4fa88e167aaad9bb94276d3fc0db37f6dc08fd"
+        },
+        "model-00050.safetensors": {
+          "bytes": 1782580096,
+          "sha256": "00ae0870fcd45eb47bd97f61411bcc648a3cfc6fcb887412443fa6febd121c0a"
+        },
+        "model-00051.safetensors": {
+          "bytes": 1028354096,
+          "sha256": "342f381a17ef367114f9f360479ae5d33f83ff5126c3f1851155b71ecbd541df"
+        },
+        "model-00052.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "c7b809d31b83f018d485e69cd79aec75374cb2d00fe13596ac68d7644b10db92"
+        },
+        "model-00053.safetensors": {
+          "bytes": 912045856,
+          "sha256": "b7d02c8fe37c1211b1aeefe0b7642de88590577d44f46c50d34f5f97fad4aa6a"
+        },
+        "model-00054.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "cc90a1c0ed9aefb11455be28b9b3d4b467ce401d461c127aa7321062b643cae7"
+        },
+        "model-00055.safetensors": {
+          "bytes": 1031815600,
+          "sha256": "a58db82190744e5aa694e5276830c97da31be179584cab27a8187f7e25a39257"
+        },
+        "model-00056.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "55753dc19dddb7b9f9dd200d090d3647d78cb2fd0492a84aacc987a4667f76db"
+        },
+        "model-00057.safetensors": {
+          "bytes": 977150256,
+          "sha256": "e85174907fb71575ae4429ec927ba6cab2d25d3d5b4dbc77a50dc2dd2f854faa"
+        },
+        "model-00058.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "bb3dbe26113137ce26a9bd59809a3d626d51114306cfaad8079d24cf382cafd7"
+        },
+        "model-00059.safetensors": {
+          "bytes": 975409424,
+          "sha256": "6385161eed20c68f3e772f3e9fb6c754d351c5c623ea2768b683620da4be2996"
+        },
+        "model-00060.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "df1521a682cf8321081d3c44bb952c1fe5dfc77be267234a3bbd375331066a12"
+        },
+        "model-00061.safetensors": {
+          "bytes": 912045856,
+          "sha256": "2795900b489b76e53fa295e8ceb6eefb387879ca8925af704347addb9cdf5c71"
+        },
+        "model-00062.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "86a1e25e7ff8721cc750283dd63cd88f12066cddaae05289ddc15acbdbe37d19"
+        },
+        "model-00063.safetensors": {
+          "bytes": 1028333912,
+          "sha256": "6b5ec565a706ed7f81a7767de8807c0636a953bb7378007af22afeae023135de"
+        },
+        "model-00064.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "26233de61271a5f444c4052b4843c74003ba570101a10949441593c30b5ffb1f"
+        },
+        "model-00065.safetensors": {
+          "bytes": 973668176,
+          "sha256": "1c398e946ab5a6b296d4c1c350edbf5c9d55797900c76c1c48673e8595507d90"
+        },
+        "model-00066.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "765d8cf9119164c10591f5eed09471a18470563dd9ba45e9b15b2d7752d6f252"
+        },
+        "model-00067.safetensors": {
+          "bytes": 973668176,
+          "sha256": "e160342ce0fc477265b45a2140887a74b29ce357c2d721581bfa14808f764ca9"
+        },
+        "model-00068.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "1dfd847e63ae1bd93395451f574547079c9459a37003a47c9852d3571db48992"
+        },
+        "model-00069.safetensors": {
+          "bytes": 912046256,
+          "sha256": "023697a331154d576c3ce68c6a1bf2ffd6e569bcae2c5da20c497f7691429289"
+        },
+        "model-00070.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "73a7c6b917dba83472c9e25b2c71cfe03ff6713729f00d508114458d88806697"
+        },
+        "model-00071.safetensors": {
+          "bytes": 1028334128,
+          "sha256": "ed6533ccb755e40cc2dd5ec8f706e740a61271c1dacbbcfed939be0ad57bfa46"
+        },
+        "model-00072.safetensors": {
+          "bytes": 1782580096,
+          "sha256": "31b3b51a71cf646f3dd13d89634c1490e8999cf6c3356a6ccab4bac184bbf406"
+        },
+        "model-00073.safetensors": {
+          "bytes": 973668152,
+          "sha256": "20a3d12a1323f4fe422efbe9e84054fad5f0b8c71c123ae5b0618b3c67032385"
+        },
+        "model-00074.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "f1e3584bfe1348da259ac105f2ed1336c6a0c889f197d2bcd0c57a4c9b4da2d3"
+        },
+        "model-00075.safetensors": {
+          "bytes": 990380264,
+          "sha256": "aa55dca93e25e7762714f2ff9d9c04bcd883c7f1d93af87b9d011b82bfee830f"
+        },
+        "model-00076.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "505fa9624fb9d15bd7588e851bb41059aeec744b8eb713cb4bba6bc1747ec4b9"
+        },
+        "model-00077.safetensors": {
+          "bytes": 1009878040,
+          "sha256": "5a9bd3712b5e06a84af9969ab83f09046c9ae98537c204e3f155f42994ff2c8f"
+        },
+        "model-00078.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "f4e11d8023742c11b97ac67ec1e5e98986a68f722e84cbdf2bc659d23b0c4f36"
+        },
+        "model-00079.safetensors": {
+          "bytes": 912045856,
+          "sha256": "583c5379b5a222442c136f68beb2fe61070321d0f9f3bad945a24e145d4e5f3a"
+        },
+        "model-00080.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "3f05966d10c512a6c5446286c6a2f139cdb24a9a849dad41ccb9947c7723d060"
+        },
+        "model-00081.safetensors": {
+          "bytes": 1028334160,
+          "sha256": "6b89468ab0f680edc96e1414c8aa69e44e8b7674559a2047d1dc39f546c49225"
+        },
+        "model-00082.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "e7d1d589d735d0edd8e9e47c9b150b730c0538e5e0275094bc0e4cbe3081fb5b"
+        },
+        "model-00083.safetensors": {
+          "bytes": 973673424,
+          "sha256": "8bde169eda5b3e8e596e65213cda6286d6485b7dafbd3bb62cd556563a071d55"
+        },
+        "model-00084.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "4fc49f5d607474f9529bb358e935c343f8737eb0a348b2f47d8289a9bbf095a6"
+        },
+        "model-00085.safetensors": {
+          "bytes": 973668176,
+          "sha256": "329763585796e4dd722f6f6d16bb7a6f60121553cc1430358f31b5eaa3b9e973"
+        },
+        "model-00086.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "772017dc49552190e3bfa8f3b04a76a146d613b865c9737a441baad0f7c13eda"
+        },
+        "model-00087.safetensors": {
+          "bytes": 912066464,
+          "sha256": "363b66dfb1903cc02adcbcdf55816a460212ed79b41e82ca7105d63367afbb48"
+        },
+        "model-00088.safetensors": {
+          "bytes": 1782580104,
+          "sha256": "0dea271a64d41ce4692a210342f2b24522b2eed1820f1f36288f7f7f309d1405"
+        },
+        "model-00089.safetensors": {
+          "bytes": 1035297056,
+          "sha256": "a6b675db3ef06433228cd609d5e06cec17d1d1fb23d8129a6722bf18ba8d24f7"
+        },
+        "model-00090.safetensors": {
+          "bytes": 1782580096,
+          "sha256": "8b902ab4fc64a603e4ff295e73e7ffbb24253956b2268dbe5f6136c409d96976"
+        },
+        "model-00091.safetensors": {
+          "bytes": 973668128,
+          "sha256": "e21514d9b1d2f9f3d7328a0154eea71729fd847f72711f64af09472c096933e1"
+        },
+        "model-00092.safetensors": {
+          "bytes": 1782580096,
+          "sha256": "853ed80998408c9972f191a916c4813d150a4cca9f13a225f66dba5d990b5f76"
+        },
+        "model-00093.safetensors": {
+          "bytes": 919009384,
+          "sha256": "8ef0759583ca291f07e0094a75ba6f803fa78315d4b58accc3eed88788e303ac"
+        },
+        "model-00094.safetensors": {
+          "bytes": 1782580096,
+          "sha256": "cd9b544dde7b656a695c6548dfc06ee023fca3449ab7aed4697e511c2b26df93"
+        },
+        "model-00095.safetensors": {
+          "bytes": 1028333440,
+          "sha256": "9f0d71f4e86495cc6f40d5937eeeb48d831629135c1432834cfd561d1ec3d21f"
+        },
+        "model-00096.safetensors": {
+          "bytes": 1782580096,
+          "sha256": "c6d0cd5fa9acd292395aaeb98578a1e59acd09452d53a33b5b8cf6b9db9cf9cc"
+        },
+        "model-00097.safetensors": {
+          "bytes": 973668128,
+          "sha256": "26be5f7f74beb4013fa9308e009b095ad42e1db766eb6069641f5bc79e729f97"
+        },
+        "model-00098.safetensors": {
+          "bytes": 1782580096,
+          "sha256": "9258a2af625ce05e041595460d4007c08a8eb5dfc68a379b12cf67e67183bcdc"
+        },
+        "model-00099.safetensors": {
+          "bytes": 1580409760,
+          "sha256": "4c1fb4f0e4801906987d40f386d61cdcde53868a058bd11129c3422865bad895"
+        },
+        "model-00100.safetensors": {
+          "bytes": 675430752,
+          "sha256": "6518523a9d5ed8ad59a0a19f08ad1eb2a5e0d30aab38b8c52e9089b8a495671d"
+        },
+        "model-vision.safetensors": {
+          "bytes": 897901896,
+          "sha256": "bba0b8dd7d32f2295a422bc61ddcf3101d0136a12511e33fa776e716278359fe"
+        },
+        "model.safetensors.index.json": {
+          "bytes": 305027,
+          "sha256": "bc41d6bbdfd3c215d50d66ced0f2dfab12bcd52ec6e0da4d0fed93f453bf9964"
+        },
+        "ngram_table.bin": {
+          "bytes": 57600276856,
+          "sha256": "e63353264f310befbeb020d25e89c3f4a851541bfb32c3139342f226b4dc343c"
+        },
+        "tokenizer.json": {
+          "bytes": 12809320,
+          "sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3"
+        },
+        "tokenizer_config.json": {
+          "bytes": 17928,
+          "sha256": "b11349aafa7cdc6a320767cf7ceb29ed82f7eda5d65e8e0819e76f0ce947bf27"
+        },
+        "vocab.json": {
+          "bytes": 6722759,
+          "sha256": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003"
+        }
+      },
+      "verification": {
+        "checked_at": "2026-10-20",
+        "files_api": "https://modelscope.cn/api/v1/models/ddalcu/Qwen3.8-Flash-Next-MLX-Serve-8bit/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "upstream_lfs_comparison": "103 个 LFS 文件的大小与 SHA256 均匹配 Hugging Face 同名仓库；平台辅助文件存在差异。",
+        "mtp_layout": "language_model.mtp.* 位于模型分片内；无需单独的推测解码草稿模型。"
+      },
+      "component": false,
+      "group": "llm",
+      "short_name": "ddalcu/Qwen3.8-Flash-Next-MLX-Serve-8bit（大模型）",
+      "runtime": "ddalcu/mlx-serve"
+    },
+    {
+      "id": "qwen38-27b-bf16",
+      "name": "Qwen3.8-27B-bf16 + MTP（大模型）",
+      "repo_id": "mlx-community/Qwen3.8-27B-bf16",
+      "revision": "master",
+      "subdir": "llm/Qwen3.8-27B-bf16",
+      "precision": "BF16 MLX 主模型 + BF16 MTP；适配仅添加张量键名前缀",
+      "license": "Apache-2.0 (model card declaration; verify upstream terms)",
+      "license_url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+      "license_notice": "主模型与 MTP 模型卡均标注 Apache-2.0；遵循上游原模型条款。",
+      "source_url": "https://modelscope.cn/models/mlx-community/Qwen3.8-27B-bf16",
+      "enabled": true,
+      "include": [
+        ".gitattributes",
+        "README.md",
+        "chat_template.jinja",
+        "config.json",
+        "configuration.json",
+        "generation_config.json",
+        "merges.txt",
+        "model-00001-of-00011.safetensors",
+        "model-00002-of-00011.safetensors",
+        "model-00003-of-00011.safetensors",
+        "model-00004-of-00011.safetensors",
+        "model-00005-of-00011.safetensors",
+        "model-00006-of-00011.safetensors",
+        "model-00007-of-00011.safetensors",
+        "model-00008-of-00011.safetensors",
+        "model-00009-of-00011.safetensors",
+        "model-00010-of-00011.safetensors",
+        "model-00011-of-00011.safetensors",
+        "model.safetensors.index.json",
+        "preprocessor_config.json",
+        "processor_config.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "video_preprocessor_config.json",
+        "vocab.json"
+      ],
+      "disk_gb": 54.743807404,
+      "readiness": "verified_mlx_bf16_mtp_adapted_not_mac_tested",
+      "requires": [
+        "qwen38-27b-mtp-bf16"
+      ],
+      "notes": "保留原主模型目录。自动补齐 BF16 MTP 副头并生成 MLX-Serve 兼容头；仅更改键名前缀，保留张量字节，不量化，不重复加一；仅保留最终 weights.safetensors，新暂存原件成功后清理。已有最终普通文件大小匹配即跳过。已有主模型逐文件校验后复用。运行时 BF16 还需关闭默认头部/注意力量化；未在 Mac 实测。",
+      "expected_files": {
+        ".gitattributes": {
+          "bytes": 2229,
+          "sha256": "ea531a2287d6df7b3d3760738c1d10289568afe669efd9fe34f54ffe5e76e937"
+        },
+        "README.md": {
+          "bytes": 624,
+          "sha256": "bfb12fbc119179358f3415e45e06090f7f24d4e9680d68dbb4ebbe4de3137afe"
+        },
+        "chat_template.jinja": {
+          "bytes": 8952,
+          "sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041"
+        },
+        "config.json": {
+          "bytes": 4727,
+          "sha256": "4de5e964cc7262209925609db8e62b3238be9625bac8d7d9840d4e71450651fe"
+        },
+        "configuration.json": {
+          "bytes": 76,
+          "sha256": "7f5e4dab8f262b1731914cb110764c86dbfc0459a136de7cc3ae4ae375edc828"
+        },
+        "generation_config.json": {
+          "bytes": 202,
+          "sha256": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e"
+        },
+        "merges.txt": {
+          "bytes": 3353259,
+          "sha256": "a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d"
+        },
+        "model-00001-of-00011.safetensors": {
+          "bytes": 5229165261,
+          "sha256": "a6f0e4bf8f896217148e9ee4a7f5a54e7be18445b958925f2c7b34be818d0444"
+        },
+        "model-00002-of-00011.safetensors": {
+          "bytes": 5321764754,
+          "sha256": "589aea813a355531381b8c415fe5449221060a30390782428833afc93ea73fff"
+        },
+        "model-00003-of-00011.safetensors": {
+          "bytes": 5321764861,
+          "sha256": "d474e16a9f05a677ca8c8f16520684aeed1da05da46d8e6a12f98e0610d6d078"
+        },
+        "model-00004-of-00011.safetensors": {
+          "bytes": 5321764870,
+          "sha256": "3b62d9853a947eaa1571679ce09d56167b8b21f03fd732b479d008c3729a7675"
+        },
+        "model-00005-of-00011.safetensors": {
+          "bytes": 5343801131,
+          "sha256": "e49bd3e3bb623f4d4356c9b48f082ac42dab9be1c6ee9b23830f5d639f76e705"
+        },
+        "model-00006-of-00011.safetensors": {
+          "bytes": 5321764862,
+          "sha256": "8955110da9129a54a6d478db02077e78bdc3203366d34ad7293668df9492c993"
+        },
+        "model-00007-of-00011.safetensors": {
+          "bytes": 5321764852,
+          "sha256": "97d6a9c4d49378431166c650686dc685808ac670e5e2c1c87114387a135e715c"
+        },
+        "model-00008-of-00011.safetensors": {
+          "bytes": 5321764844,
+          "sha256": "c2e26fb1b93bbe9bb5197ccd9eefce08857d87b9078edc78ca4e73cafbc0a2a8"
+        },
+        "model-00009-of-00011.safetensors": {
+          "bytes": 5343801175,
+          "sha256": "3dc8bd5651770f2a07af5174d4e99acba6d313a8199aed0b8151c69de757d4bd"
+        },
+        "model-00010-of-00011.safetensors": {
+          "bytes": 4323452933,
+          "sha256": "c8831fbe5d5ee48a278a7879a16c9c065cc5b5b0179fd7ef553a372a3bf81fd2"
+        },
+        "model-00011-of-00011.safetensors": {
+          "bytes": 2542796942,
+          "sha256": "1219c9ea7951f2bb93c0ccafa2e6e65ac9111fda00961e3fbe614e30050c95e9"
+        },
+        "model.safetensors.index.json": {
+          "bytes": 115835,
+          "sha256": "1db862301da01efa0a977a8f6944195d79bcab9683863c7e5f2e9aa33f8d1ce3"
+        },
+        "preprocessor_config.json": {
+          "bytes": 390,
+          "sha256": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516"
+        },
+        "processor_config.json": {
+          "bytes": 991,
+          "sha256": "45fc17c8dd2474af6b493b52483c26c0584b0082d368c480f9fa611e73070040"
+        },
+        "tokenizer.json": {
+          "bytes": 19989325,
+          "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+        },
+        "tokenizer_config.json": {
+          "bytes": 1165,
+          "sha256": "792fa3f0cb88b111e54ef3134c873531008c4df471d108da17903426e308aa7b"
+        },
+        "video_preprocessor_config.json": {
+          "bytes": 385,
+          "sha256": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13"
+        },
+        "vocab.json": {
+          "bytes": 6722759,
+          "sha256": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003"
+        }
+      },
+      "verification": {
+        "checked_at": "2026-10-20",
+        "files_api": "https://modelscope.cn/api/v1/models/mlx-community/Qwen3.8-27B-bf16/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "mtp_layout": "依赖 mlx-community/Qwen3.8-27B-MTP-bf16；原 model.safetensors 为15个裸键 BF16 张量。按 v26.10.2 生成 mtp/weights.safetensors，添加 mtp. 前缀，原 tensor payload 不变。",
+        "model_card_runtime": "mlx-vlm；模型卡声明使用 mlx-vlm 0.6.8 转换；尚未做本地推理验证。"
+      },
+      "component": false,
+      "group": "llm",
+      "short_name": "mlx-community/Qwen3.8-27B-bf16 + MTP（大模型）",
+      "runtime": "mlx-vlm",
+      "strict_download": true
+    },
+    {
+      "id": "yue2-audio-cpp-bf16",
+      "name": "Yue2-3B-GGUF（音乐·BF16/F32）",
+      "short_name": "audio-cpp/Yue2-3B-GGUF（音乐·BF16/F32）",
+      "repo_id": "audio-cpp/Yue2-3B-GGUF",
+      "enabled": true,
+      "component": false,
+      "group": "audio",
+      "revision": "master",
+      "subdir": "music/Yue2-3B-GGUF",
+      "precision": "主模型 BF16，VAE F32；不下载其他量化版本",
+      "runtime": "audio.cpp",
+      "readiness": "verified_audio_cpp_header_not_mac_tested",
+      "disk_gb": 7.794596343,
+      "verified_size_bytes": 7794596343,
+      "requires": [],
+      "include": [
+        "yue2-3b-bf16.gguf",
+        "yue2-vae-f32.gguf",
+        "sidecars/yue2-model-config.json",
+        "sidecars/yue2-generation-config.json",
+        "sidecars/yue2-qwen.tiktoken",
+        "sidecars/yue2-vae-config.json",
+        "README.md"
+      ],
+      "expected_files": {
+        "yue2-3b-bf16.gguf": {
+          "bytes": 7261484576,
+          "sha256": "4cf3fdffbaaed2d8e30a3122ac7cd27d0c96f8921805f173da9758c685b3c7d6"
+        },
+        "yue2-vae-f32.gguf": {
+          "bytes": 530537760,
+          "sha256": "cf3b71c6ef13b8b7970f8c1013b899e4af6ff9756c93bda45bef542dd6e10546"
+        },
+        "sidecars/yue2-model-config.json": {
+          "bytes": 959,
+          "sha256": "ad3477bbef890bf98ae196c1e4b44779494a6231c4ab66f32708eabadf265329"
+        },
+        "sidecars/yue2-generation-config.json": {
+          "bytes": 466,
+          "sha256": "203830cebde6e3644eb291925362990d198e66c3b6006cd11f1aaa21904bcc61"
+        },
+        "sidecars/yue2-qwen.tiktoken": {
+          "bytes": 2561218,
+          "sha256": "b2b1b8dfb5cc5f024bafc373121c6aba3f66f9a5a0269e243470a1de16a33186"
+        },
+        "sidecars/yue2-vae-config.json": {
+          "bytes": 1378,
+          "sha256": "f0191bb9694009956de44e0c361a6f1334760be4c8f848e599bde242a54a0970"
+        },
+        "README.md": {
+          "bytes": 9986,
+          "sha256": "49b1045caa920190b768b5b9c16af6095bae5083b9c76768d31f69221e2043eb"
+        }
+      },
+      "source_url": "https://modelscope.cn/models/audio-cpp/Yue2-3B-GGUF",
+      "license": "CC-BY-NC-4.0",
+      "license_url": "https://modelscope.cn/models/audio-cpp/Yue2-3B-GGUF/resolve/master/README.md",
+      "license_notice": "权重仅限非商业用途；转换包不解除上游许可限制。",
+      "notes": "已核查魔搭 GGUF v3 包头、yue2 模型家族、规格版本及外置附件映射；保留 sidecars/ 目录。主模型 BF16、VAE F32，六个必要文件与 README 一并下载，不含示例、LoRA 或其他精度。尚未在本机下载或推理；运行时须指定 yue2.model_gguf=yue2-3b-bf16.gguf 和 yue2.vae_gguf=yue2-vae-f32.gguf，不能沿用 Q8/F16 默认值。",
+      "verification": {
+        "checked_at": "2026-10-25",
+        "files_api": "https://modelscope.cn/api/v1/models/audio-cpp/Yue2-3B-GGUF/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "validation": "重新核查魔搭文件树及两份 GGUF 摘要；下载四个 sidecars 小文件重算 SHA256，全部匹配清单。未实机运行。"
+      }
+    },
+    {
+      "id": "qwen21-license",
+      "name": "Qwen 2.1 Turbo 官方许可证",
+      "repo_id": "Qwen/Qwen-Image-2.1-Turbo",
+      "revision": "master",
+      "subdir": "images/Qwen-Image-2.1/licenses/Qwen-Image-2.1-Turbo",
+      "precision": "不适用",
+      "license": "Qwen Research License",
+      "license_url": "https://modelscope.cn/models/Qwen/Qwen-Image-2.1-Turbo/resolve/master/LICENSE",
+      "source_url": "https://modelscope.cn/models/Qwen/Qwen-Image-2.1-Turbo",
+      "enabled": true,
+      "component": true,
+      "group": "image_video",
+      "include": [
+        "LICENSE"
+      ],
+      "disk_gb": 7.831e-06,
+      "requires": [],
+      "expected_files": {
+        "LICENSE": {
+          "bytes": 7831,
+          "sha256": "8dc973f024ff95966bea25866efa443fd16776dcb1001e681e3d467ea572b28d"
+        }
+      },
+      "notes": "仅附官方许可文本；不下载官方整包或额外权重。",
+      "runtime_required": false
+    },
+    {
+      "id": "qwen38-27b-mtp-bf16",
+      "name": "Qwen3.8-27B BF16 MTP 组件",
+      "short_name": "mlx-community/Qwen3.8-27B-MTP-bf16（随主模型补齐）",
+      "repo_id": "mlx-community/Qwen3.8-27B-MTP-bf16",
+      "revision": "master",
+      "subdir": "llm/Qwen3.8-27B-bf16/mtp",
+      "group": "llm",
+      "component": true,
+      "enabled": true,
+      "strict_download": true,
+      "include": [
+        "README.md",
+        "config.json",
+        "model.safetensors"
+      ],
+      "expected_files": {
+        "README.md": {
+          "bytes": 1444,
+          "sha256": "0b400a7fd6f247941d0a561a308dc74a543ba541ce35c846f9a9d82ddbf3f36e"
+        },
+        "config.json": {
+          "bytes": 2976,
+          "sha256": "1d0fae1de88b663ed0daabc8884f8a5dd076011164e4500dda4ebc947079af05"
+        },
+        "model.safetensors": {
+          "bytes": 849400335,
+          "sha256": "5e56984334540b6b9b512fc6adbb892674d357bad02f116c1404b50813f8c93a"
+        }
+      },
+      "requires": [],
+      "disk_gb": 0.849404755,
+      "precision": "BF16，15个张量；适配不改变张量数据",
+      "license": "Apache-2.0",
+      "license_url": "https://huggingface.co/mlx-community/Qwen3.8-27B-MTP-bf16",
+      "source_url": "https://modelscope.cn/models/mlx-community/Qwen3.8-27B-MTP-bf16",
+      "readiness": "verified_mlx_bf16_mtp_adapted_not_mac_tested",
+      "local_adaptations": [
+        {
+          "kind": "safetensors_prefix",
+          "source": "model.safetensors",
+          "target": "weights.safetensors",
+          "prefix": "mtp.",
+          "tensor_count": 15
+        }
+      ],
+      "verification": {
+        "checked_date": "2026-10-22",
+        "revision_is_mutable": true,
+        "runtime_source": "https://github.com/ddalcu/mlx-serve/blob/v26.10.2/src/mtp.zig",
+        "norm_semantics": "社区拆分器已折叠 +1；运行时自动检测，不再手动加一。",
+        "tensor_payload": "全15个张量 BF16；来源数据区保持不变，尚未 Mac 实测。"
+      },
+      "generated_expected_files": {
+        "weights.safetensors": {
+          "bytes": 849400400
+        }
+      },
+      "final_only_adaptation": true
+    }
+  ]
+}

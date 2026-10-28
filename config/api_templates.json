@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "runtimes": [
+    {
+      "id": "mlx-serve",
+      "name": "MLX-Serve",
+      "aliases": [
+        "ddalcu/mlx-serve"
+      ],
+      "probes": [],
+      "standard_probes": [
+        "~/Applications/MLX-Serve.app",
+        "/Applications/MLX-Serve.app",
+        "~/Applications/MLX Core.app",
+        "/Applications/MLX Core.app"
+      ],
+      "markdown": "手动打开 MLX-Serve 桌面 App，添加下面的本地模型目录、加载模型并开启 API。本工具包不配置 MLX CLI，也不自动启动 App 或模型。\n\n以下端口示例为 11234，以 App 显示为准：\n```bash\ncurl --fail http://127.0.0.1:11234/v1/models\n```\n请求的 model 使用返回的实际 ID。LLM 使用 /v1/chat/completions；Music3、H3 使用各自媒体接口。\n来源：[官方 HTTP API](https://github.com/ddalcu/mlx-serve/blob/v26.10.2/docs/api.md)。"
+    },
+    {
+      "id": "llama.cpp",
+      "name": "llama.cpp",
+      "aliases": [],
+      "probes": [
+        "bin/llama-server"
+      ],
+      "standard_probes": [],
+      "markdown": "核查基准版本：b11669。检测到文件不等于已运行；版本须另行核对，以下命令均未自动执行。端口只是示例，不表示正在监听。\n\n仅适用于兼容 LLM GGUF，不能加载 audio.cpp 的 Qwen-ASR/YuE2 GGUF，也不能把任意 safetensors 当 GGUF。\n\n```bash\n{{BINARY_PATH}} --version\n{{BINARY_PATH}} --help\nMODEL_FILE='/替换为已核验的LLM.gguf'\n{{BINARY_PATH}} --model \"$MODEL_FILE\" --alias gguf-llm --host 127.0.0.1 --port 18081 --ctx-size 4096 --parallel 1 --n-gpu-layers 99 --offline\n```\n\n另一个终端确认 /health 为 200 后再调用。503 可能是加载中；不要同时启动同模型的 MLX 后端。\n\n```bash\ncurl --fail http://127.0.0.1:18081/health\ncurl --fail http://127.0.0.1:18081/v1/chat/completions -H 'Content-Type: application/json' -d '{\"model\":\"gguf-llm\",\"messages\":[{\"role\":\"user\",\"content\":\"请用一句话介绍自己。\"}],\"max_tokens\":64}'\n```\n\n返回 JSON 的 choices[0].message.content 为文本。层数/上下文是起始示例，不保证适合内存。未给本组件自动配入任何 LLM 权重。\n来源：[b11669 server](https://github.com/ggml-org/llama.cpp/blob/b11669/tools/server/README.md)。"
+    },
+    {
+      "id": "llama-swap",
+      "name": "llama-swap",
+      "aliases": [],
+      "probes": [
+        "bin/llama-swap"
+      ],
+      "standard_probes": [],
+      "markdown": "核查基准版本：v265。检测到文件不等于已运行；版本须另行核对，以下命令均未自动执行。端口只是示例，不表示正在监听。\n\n它是路由与进程启停器，不是推理模型。必须先自行完成真实后端路径、模型、端口、健康检查的配置；本包示例 YAML 不是可直接运行的完整部署。\n\n```bash\n{{BINARY_PATH}} --help\nCONFIG='/替换为已配置的llama-swap.yaml'\n{{BINARY_PATH}} --config \"$CONFIG\" --listen 127.0.0.1:8080\n# 启动且配置中确有 gguf-llm 后，以下请求会启动后端并执行一次推理\ncurl --fail http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' -d '{\"model\":\"gguf-llm\",\"messages\":[{\"role\":\"user\",\"content\":\"你好\"}],\"max_tokens\":32}'\n```\n\n自定义接口可通过 /upstream/<配置中的服务ID>/... 转发，但不会转换 JSON 协议。HTTP 提交返回后仍运行的异步生成不受“请求结束”保护；没有作业生命周期网关时，别对 sd.cpp 长任务启用跨模型自动切换。避免同时启动独立后端或 KeepAlive 将被卸载进程复活。\n来源：[v265 配置与路由](https://github.com/mostlygeek/llama-swap/tree/v265)。"
+    },
+    {
+      "id": "sd.cpp",
+      "name": "stable-diffusion.cpp",
+      "aliases": [
+        "stable-diffusion.cpp"
+      ],
+      "probes": [
+        "bin/sd-server"
+      ],
+      "standard_probes": [],
+      "markdown": "固定版 master-1006-0886f11 支持原生模型切换。服务管理 → 启动全部，完整 Qwen 默认加载，之后可在 WebUI 选择配方和组件切换。同一服务无需 llama-swap。\n\nGET /sdcpp/v1/recipes、/model-files；GET /sdcpp/v1/models/status；POST /sdcpp/v1/models/load 与 /unload（完整前缀均为 /sdcpp/v1）。load 提交 recipe 与 models 字段，文件 id 必须取自 model-files，不是绝对路径。生成请求的 model 不会自动切换。忙时 409，不强停。\n\n服务配置后本页的原生服务部分给出实际地址和调用命令。来源：[固定版 API](https://github.com/leejet/stable-diffusion.cpp/blob/master-1006-0886f11/examples/server/api.md#model-management)。"
+    },
+    {
+      "id": "audio.cpp",
+      "name": "audio.cpp",
+      "aliases": [],
+      "probes": [
+        "bin/audiocpp_server"
+      ],
+      "standard_probes": [],
+      "markdown": "核查基准版本：v0.9.2-drama3-base-small。检测到文件不等于已运行；版本须另行核对，以下命令均未自动执行。端口只是示例，不表示正在监听。\n\n先按固定版 server 文档创建配置，指定模型 ID、实际 GGUF 及所需附件；选择受该模型支持的 Metal 后端。模型目录存在不表示配置已生成或服务已启动。不能把任意 GGUF 交给 llama.cpp，也不能用 MLX 权重代替 audio.cpp 包。\n\n```bash\n{{BINARY_PATH}} --help\n```\n\n下方 Qwen ASR 和 YuE2 示例使用配置中的模型 ID；先人工确认启动与健康状态，再提交任务。WAV 是转写示例的保守输入；不要把第三方解码能力当成本包已安装。\n来源：[固定版 server 说明](https://github.com/0xShug0/audio.cpp/blob/v0.9.2-drama3-base-small/examples/server/README.md)。\n\n在确认配置文件正确后，手动前台启动：\n```bash\nCONFIG=\"/替换为已经检查的server.json\"\n{{BINARY_PATH}} --config \"$CONFIG\" --log\n```\n服务不会由 API.md 的生成操作启动。"
+    },
+    {
+      "id": "hermes",
+      "name": "Hermes Agent CLI",
+      "aliases": [],
+      "probes": [
+        "bin/hermes"
+      ],
+      "standard_probes": [
+        "~/.local/bin/hermes"
+      ],
+      "markdown": "核查基准版本：v0.22.2 / d923a5eb487a17c0a68801bba9ef0f56c81040a8。检测到文件不等于已运行；版本须另行核对，以下命令均未自动执行。端口只是示例，不表示正在监听。\n\n这是 Agent CLI，不因为安装完成就拥有 HTTP 推理服务，也未配置 provider、gateway 或工具权限。\n\n```bash\n{{BINARY_PATH}} --version\n{{BINARY_PATH}} --help\n# 下面是你主动进行配置的步骤，不在安装或检查时自动执行\n{{BINARY_PATH}} setup\n```\n\n若选择本地 provider，先独立验收对应后端，再填写其实际 OpenAI 兼容 base URL 和 model ID。不要把 Hermes 的 CLI 地址误写成 /v1/chat/completions 服务。\n来源：[固定版源码](https://github.com/NousResearch/hermes-agent/tree/d923a5eb487a17c0a68801bba9ef0f56c81040a8)。"
+    }
+  ],
+  "models": {
+    "qwen38-flash-next-8bit": {
+      "runtime_ids": [
+        "mlx-serve"
+      ],
+      "markdown": "已发现模型路径（shell 已转义）：\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n先在 MLX-Serve 桌面 App 添加这个单模型目录，手动加载并开启 API。以下 Python 仅用标准库；先设置实际 model ID，执行才会发出一次推理请求。\n\n```python\nimport json\nfrom urllib.request import Request, urlopen\nbase = \"http://127.0.0.1:11234\"  # 改为你的实际本机端口\nmodel_id = \"替换为GET /v1/models返回的id\"\npayload = {\"model\": model_id, \"messages\": [{\"role\": \"user\", \"content\": \"你好，请简短回答。\"}], \"max_tokens\": 64}\nreq = Request(base + \"/v1/chat/completions\", data=json.dumps(payload).encode(), headers={\"Content-Type\": \"application/json\"})\nwith urlopen(req, timeout=300) as response:\n    result = json.load(response)\nprint(result[\"choices\"][0][\"message\"][\"content\"])\n```\n本包核查了 MLX-Serve 专用目录及内嵌 MTP；未实机验收，不保证内存足够。"
+    },
+    "qwen38-27b-bf16": {
+      "runtime_ids": [
+        "mlx-serve"
+      ],
+      "markdown": "主模型与 BF16 MTP 分别来自 mlx-community。下载器只保留最终 mtp/weights.safetensors，新下载原件适配后清理：只添加 mtp. 键名前缀，不量化，不修改张量数据。\n\n在 MLX-Serve 桌面 App 添加该目录，手动加载模型并开启 API。文件为 BF16 不保证运行时所有路径都保持 BF16；基线测试前在 App 中核对注意力量化、KV 与 MTP 设置及实际加载日志。本包不修改这些设置。\n\n以下 Python 仅用标准库；先设置实际 model ID，执行才会发出一次推理请求。\n\n```python\nimport json\nfrom urllib.request import Request, urlopen\nbase = \"http://127.0.0.1:11234\"  # 改为你的实际本机端口\nmodel_id = \"替换为GET /v1/models返回的id\"\npayload = {\"model\": model_id, \"messages\": [{\"role\": \"user\", \"content\": \"你好，请简短回答。\"}], \"max_tokens\": 64}\nreq = Request(base + \"/v1/chat/completions\", data=json.dumps(payload).encode(), headers={\"Content-Type\": \"application/json\"})\nwith urlopen(req, timeout=300) as response:\n    result = json.load(response)\nprint(result[\"choices\"][0][\"message\"][\"content\"])\n```\n\n尚未在 Mac 实测。\n"
+    },
+    "asr-qwen3-1.7b-f16": {
+      "runtime_ids": [
+        "audio.cpp"
+      ],
+      "markdown": "已发现模型路径（shell 已转义）：\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n模型文件：\n```bash\nMODEL_FILE={{MODEL_FILE}}\n```\n\n先检查以下配置示例；它选择 Metal，但不声称模型已在 Mac 验收。手动执行下段才会在当前目录写出配置，不启动服务；已存在文件不会覆盖。\n\n```python\nimport json\nconfig = {\"host\": \"127.0.0.1\", \"port\": 18080, \"backend\": \"metal\", \"lazy_load\": True, \"max_loaded_models\": 1,\n          \"models\": [{\"id\": \"qwen3-asr\", \"family\": \"qwen3_asr\", \"path\": {{MODEL_FILE_JSON}}, \"task\": \"asr\", \"mode\": \"offline\"}]}\nwith open(\"qwen-asr-server.json\", \"x\") as f:\n    json.dump(config, f, ensure_ascii=False, indent=2)\n```\n\n使用上方 audio.cpp 条目的启动命令，把 CONFIG 设为 qwen-asr-server.json 的实际绝对路径。与 YuE2 示例使用同一端口时二选一，或明确更改端口；不要重复启动。确认 /health 和 /v1/models 后调用；lazy_load 的健康成功不代表权重加载成功。\n\n请求 model 必须等于配置 ID，不是清单 ID 或随意填文件名。\n\n```bash\nBASE_URL='http://127.0.0.1:18080' # 示例，改为实际端口\nASR_MODEL_ID='qwen3-asr' # 如果修改配置ID，这里同步修改\nWAV='/替换为你有权使用的本地录音.wav'\ncurl --fail \"$BASE_URL/v1/audio/transcriptions\" -F \"file=@$WAV;type=audio/wav\" -F \"model=$ASR_MODEL_ID\"\n```\n\n响应为包含 text 及 timing 的 JSON。这里保留非流式示例。该版本的流式转写是缓冲后的 SSE，不等于低延迟麦克风双向 Realtime；不承诺 OpenAI 每个音频字段都兼容。\n来源：[固定版 server 文档](https://github.com/0xShug0/audio.cpp/blob/v0.9.2-drama3-base-small/examples/server/README.md)。"
+    },
+    "music3-mlx-8bit": {
+      "runtime_ids": [
+        "mlx-serve"
+      ],
+      "markdown": "已发现模型路径（shell 已转义）：\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n先在 MLX-Serve 桌面 App 中加载这个目录并开启 API，再从 /v1/models 取得 Music3 ID。下例为一次非流式音乐生成，返回 WAV；上限 10 秒不是保证实际长度或完成时间。输出使用 xb，拒绝覆盖已有文件。\n\n```python\nimport json\nfrom urllib.request import Request, urlopen\npayload = {\"model\": \"替换为Music3实际服务ID\", \"prompt\": \"温暖的原声流行音乐\", \"lyrics\": \"[verse]\\n晨光照亮窗前\\n微风轻轻向前\", \"duration_seconds\": 10, \"stream\": False}\nreq = Request(\"http://127.0.0.1:11234/v1/audio/music-generations\", data=json.dumps(payload).encode(), headers={\"Content-Type\": \"application/json\"})\nwith urlopen(req, timeout=3600) as response:\n    if \"audio/wav\" not in response.headers.get(\"Content-Type\", \"\"):\n        raise RuntimeError(\"返回不是WAV，请检查服务错误\")\n    with open(\"music3-output.wav\", \"xb\") as out:\n        out.write(response.read())\n```\n\n流式版本使用 SSE；complete 事件中的 data 是 base64 WAV，不是 MP3。歌词非空时不要同时设置 instrumental=true。不要套用 YuE2 的模型格式或配置。\n来源：[固定版 Music3 请求与返回](https://github.com/ddalcu/mlx-serve/blob/v26.10.2/src/gen.zig#L3201-L3325)。"
+    },
+    "h3-mlx-8bit": {
+      "runtime_ids": [
+        "mlx-serve"
+      ],
+      "markdown": "已发现模型路径（shell 已转义）：\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\nFL2VA 是首尾帧变体；此例只用文字，不接受 ref_audios、ref_images、ref_videos。\n\n先在 MLX-Serve 桌面 App 中加载这个单模型目录并开启 API，取 /v1/models 的实际 ID。请求发出后执行一次视频生成；下面只读取 SSE，不创建可播放视频。\n\n```python\nimport json\nfrom urllib.request import Request, urlopen\npayload = {\"model\": \"替换为这个H3变体的实际服务ID\", \"prompt\": \"安静的湖面，微风吹动树叶\", \"stream\": True}\n\nreq = Request(\"http://127.0.0.1:11234/v1/video/generations\", data=json.dumps(payload).encode(), headers={\"Content-Type\": \"application/json\"})\nwith urlopen(req, timeout=3600) as response:\n    for raw in response:\n        line = raw.decode(\"utf-8\", errors=\"replace\").rstrip()\n        if line:\n            print(line[:240])  # 不把巨量base64打印满终端\n```\n\nSSE complete 的 data 是 rgb8 原始帧，audio_data 是 pcm_s16le 原始音频，连同尺寸、fps、采样率/声道元数据处理。不能把整个响应改名 .mp4；需官方匹配客户端或另行正确封装。不是 sd.cpp 的任务ID轮询协议。断线先检查任务状态，别盲目重试。\n来源：[固定版 H3 返回协议](https://github.com/ddalcu/mlx-serve/blob/v26.10.2/src/gen.zig#L3502-L3553)。"
+    },
+    "h3-ref2va-mlx-8bit": {
+      "runtime_ids": [
+        "mlx-serve"
+      ],
+      "markdown": "已发现模型路径（shell 已转义）：\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\nREF2VA 是参考变体，不是 FL2VA；不能配 chain_windows > 1。音频使用 base64 WAV 数组，不是 URL 或文件路径。最多3段参考音频，三类参考合计最多12项。\n\n先在 MLX-Serve 桌面 App 中加载这个单模型目录并开启 API，取 /v1/models 的实际 ID。请求发出后执行一次视频生成；下面只读取 SSE，不创建可播放视频。\n\n```python\nimport json\nfrom urllib.request import Request, urlopen\npayload = {\"model\": \"替换为这个H3变体的实际服务ID\", \"prompt\": \"安静的湖面，微风吹动树叶\", \"stream\": True}\n# 如需你有权使用的音乐参考，取消下面三行注释\n# import base64\n# from pathlib import Path\n# payload[\"ref_audios\"] = [base64.b64encode(Path(\"reference.wav\").read_bytes()).decode(\"ascii\")]\nreq = Request(\"http://127.0.0.1:11234/v1/video/generations\", data=json.dumps(payload).encode(), headers={\"Content-Type\": \"application/json\"})\nwith urlopen(req, timeout=3600) as response:\n    for raw in response:\n        line = raw.decode(\"utf-8\", errors=\"replace\").rstrip()\n        if line:\n            print(line[:240])  # 不把巨量base64打印满终端\n```\n\nSSE complete 的 data 是 rgb8 原始帧，audio_data 是 pcm_s16le 原始音频，连同尺寸、fps、采样率/声道元数据处理。不能把整个响应改名 .mp4；需官方匹配客户端或另行正确封装。不是 sd.cpp 的任务ID轮询协议。断线先检查任务状态，别盲目重试。\n来源：[固定版 H3 返回协议](https://github.com/ddalcu/mlx-serve/blob/v26.10.2/src/gen.zig#L3502-L3553)。"
+    },
+    "qwen21-text": {
+      "runtime_ids": [],
+      "markdown": "已发现模型路径（shell 已转义）：\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n这是配套组件或许可文件，不提供独立推理 API。请使用所属主模型条目；文件齐全不代表主模型可加载。"
+    },
+    "qwen21-vae": {
+      "runtime_ids": [],
+      "markdown": "已发现模型路径（shell 已转义）：\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n这是配套组件或许可文件，不提供独立推理 API。请使用所属主模型条目；文件齐全不代表主模型可加载。"
+    },
+    "krea2-text": {
+      "runtime_ids": [],
+      "markdown": "已发现模型路径（shell 已转义）：\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n这是配套组件或许可文件，不提供独立推理 API。请使用所属主模型条目；文件齐全不代表主模型可加载。"
+    },
+    "wan21-vae": {
+      "runtime_ids": [],
+      "markdown": "已发现模型路径（shell 已转义）：\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n这是配套组件或许可文件，不提供独立推理 API。请使用所属主模型条目；文件齐全不代表主模型可加载。"
+    },
+    "qwen21-license": {
+      "runtime_ids": [],
+      "markdown": "已发现模型路径（shell 已转义）：\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n这是配套组件或许可文件，不提供独立推理 API。请使用所属主模型条目；文件齐全不代表主模型可加载。"
+    },
+    "yue2-audio-cpp-bf16": {
+      "runtime_ids": [
+        "audio.cpp"
+      ],
+      "markdown": "已发现目录（shell 已转义）：\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n保留完整 sidecars/，主模型 BF16、VAE F32。不要套用其他精度默认名。下面生成的是待检查配置，不会启动服务；使用 xb 拒绝覆盖已有文件。实际路径通过 JSON 编码传入，不嵌入未转义 JSON 字符串。\n\n```python\nimport json\nconfig = {\"host\": \"127.0.0.1\", \"port\": 18080, \"backend\": \"metal\", \"lazy_load\": True, \"max_loaded_models\": 1,\n          \"models\": [{\"id\": \"yue2\", \"family\": \"yue2\", \"path\": {{MODEL_DIR_JSON}}, \"task\": \"gen\", \"mode\": \"offline\",\n                      \"session_options\": {\"yue2.model_gguf\": \"yue2-3b-bf16.gguf\", \"yue2.vae_gguf\": \"yue2-vae-f32.gguf\"}}]}\nwith open(\"yue2-server.json\", \"x\") as f:\n    json.dump(config, f, ensure_ascii=False, indent=2)\n```\n\n按 audio.cpp 条目，用这个配置文件的绝对路径启动。yue2.model_gguf/vae_gguf 是目录内文件名，不是绝对路径。下面标准库示例会提交一次音乐生成；模型只支持 offline，不是实时流式接口。\n\n```python\nimport base64, json\nfrom urllib.request import Request, urlopen\npayload = {\"model\": \"yue2\", \"request\": {\"text\": \"[Verse]\\nMorning light upon the sea\\nA gentle breeze is calling me\", \"options\": {\"style\": \"English, acoustic pop, warm vocals\", \"cot\": \"off\"}}}\nreq = Request(\"http://127.0.0.1:18080/v1/tasks/run\", data=json.dumps(payload).encode(), headers={\"Content-Type\": \"application/json\"})\nwith urlopen(req, timeout=3600) as response:\n    result = json.load(response)\nwith open(\"yue2-output.wav\", \"xb\") as f:\n    f.write(base64.b64decode(result[\"audio\"], validate=True))\n```\n\n返回 JSON 顶层 audio 是 base64 WAV，不是原始 WAV、任务 ID 或 Music3 协议。不要用 /v1/audio/speech，也不虚构 duration_sec 参数。Metal 模型兼容与性能尚未实机验收；若失败先看日志，不盲目重复生成。\n来源：[固定版配置](https://github.com/0xShug0/audio.cpp/blob/v0.9.2-drama3-base-small/examples/server/yue2.json)、[请求](https://github.com/0xShug0/audio.cpp/blob/v0.9.2-drama3-base-small/examples/server/README.md)、[文件规则](https://github.com/0xShug0/audio.cpp/blob/v0.9.2-drama3-base-small/docs/models/yue2.md)。"
+    },
+    "qwen21-turbo": {
+      "runtime_ids": [
+        "sd.cpp"
+      ],
+      "markdown": "已发现目录（shell 已转义）：\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n先核查三份权重齐全及许可证。SD_SERVER 改为上方检测到的 sd-server 包装器；此示例没有实际启动。仅绑定回环，端口可改。\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\nSD_SERVER='/替换为已检测的sd-server包装器'\n\"$SD_SERVER\" --diffusion-model \"$MODEL_DIR/diffusion_models/qwen_image_2.1_turbo_bf16.safetensors\" \\\n  --llm \"$MODEL_DIR/text_encoders/qwen3vl_8b_bf16.safetensors\" \\\n  --vae \"$MODEL_DIR/vae/qwen_image_2.1_vae_bf16.safetensors\" \\\n  --sigmas qwen-image-2.1-turbo --steps 8 --cfg-scale 1.0 --sampling-method euler \\\n  --listen-ip 127.0.0.1 --listen-port 12345\n```\n\n尺寸须为32的倍数；专属2.1 VAE 不可换成旧 Qwen/Wan VAE。PNG/WebP 保留 alpha，JPG 不保留；上述一般提示词不保证一定生成透明内容。\n来源：[固定版 Turbo 配方](https://github.com/leejet/stable-diffusion.cpp/blob/master-975-95b3090/docs/qwen_image_2.1.md)、[服务参数](https://github.com/leejet/stable-diffusion.cpp/blob/master-975-95b3090/examples/server/README.md)。\n\n启动成功后在另一个终端调用同步接口；请求 model 字段不用于切换这里的权重，换模型应重启正确服务或使用独立配置/端口。\n\n```python\nimport base64, json\nfrom urllib.request import Request, urlopen\npayload = {\"prompt\": \"一只玻璃小鸟，干净背景\", \"n\": 1, \"size\": \"1024x1024\", \"output_format\": \"png\"}\nreq = Request(\"http://127.0.0.1:12345/v1/images/generations\", data=json.dumps(payload).encode(), headers={\"Content-Type\": \"application/json\"})\nwith urlopen(req, timeout=3600) as response:\n    result = json.load(response)\nwith open(\"image-output.png\", \"xb\") as f:\n    f.write(base64.b64decode(result[\"data\"][0][\"b64_json\"], validate=True))\n```\n\n这里只用同步接口，超时不代表后台已停止。另有异步 /sdcpp/v1/img_gen，返回 id/status/poll_url，需 GET poll_url，完成后读取 result.images[].b64_json；不要把接受任务当作生成完成。API.md 不会执行这些请求。\n来源：[固定版 API](https://github.com/leejet/stable-diffusion.cpp/blob/master-975-95b3090/examples/server/api.md)。"
+    },
+    "krea2-turbo": {
+      "runtime_ids": [
+        "sd.cpp"
+      ],
+      "markdown": "已发现目录（shell 已转义）：\n```bash\nMODEL_DIR={{MODEL_DIR}}\n```\n\n主干、Qwen3-VL 4B 编码器及 Wan2.1 VAE 必须一起就绪。固定版 Krea 文档仅给出 Raw 采样示例，不能把它伪称为 Turbo 最佳配方。以下只核实了组件装载和监听参数；运行前仍需依模型卡与该版本 --help 核对 Turbo 的步数、采样器与 CFG，不把默认值视为已验收。\n\n```bash\nMODEL_DIR={{MODEL_DIR}}\nSD_SERVER='/替换为已检测的sd-server包装器'\n\"$SD_SERVER\" --diffusion-model \"$MODEL_DIR/diffusion_models/krea2_turbo_bf16.safetensors\" \\\n  --llm \"$MODEL_DIR/text_encoders/qwen3vl_4b_bf16.safetensors\" \\\n  --vae \"$MODEL_DIR/dependencies/Wan_2.1_ComfyUI_repackaged/split_files/vae/wan_2.1_vae.safetensors\" \\\n  --listen-ip 127.0.0.1 --listen-port 12345\n```\n\n来源：[固定版 Krea2 组件说明](https://github.com/leejet/stable-diffusion.cpp/blob/master-975-95b3090/docs/krea2.md)。\n\n启动成功后在另一个终端调用同步接口；请求 model 字段不用于切换这里的权重，换模型应重启正确服务或使用独立配置/端口。\n\n```python\nimport base64, json\nfrom urllib.request import Request, urlopen\npayload = {\"prompt\": \"一只玻璃小鸟，干净背景\", \"n\": 1, \"size\": \"1024x1024\", \"output_format\": \"png\"}\nreq = Request(\"http://127.0.0.1:12345/v1/images/generations\", data=json.dumps(payload).encode(), headers={\"Content-Type\": \"application/json\"})\nwith urlopen(req, timeout=3600) as response:\n    result = json.load(response)\nwith open(\"image-output.png\", \"xb\") as f:\n    f.write(base64.b64decode(result[\"data\"][0][\"b64_json\"], validate=True))\n```\n\n这里只用同步接口，超时不代表后台已停止。另有异步 /sdcpp/v1/img_gen，返回 id/status/poll_url，需 GET poll_url，完成后读取 result.images[].b64_json；不要把接受任务当作生成完成。API.md 不会执行这些请求。\n来源：[固定版 API](https://github.com/leejet/stable-diffusion.cpp/blob/master-975-95b3090/examples/server/api.md)。"
+    },
+    "qwen38-27b-mtp-bf16": {
+      "runtime_ids": [
+        "mlx-serve"
+      ],
+      "markdown": "这是主模型的隐藏依赖，不单独启动。仅需最终 weights.safetensors；新下载原件适配后清理，仅添加 mtp. 键名前缀，张量字节仍为 BF16。须连同父目录的主模型加载。"
+    }
+  }
+}

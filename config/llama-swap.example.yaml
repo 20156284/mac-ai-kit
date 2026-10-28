@@ -1,0 +1,40 @@
+# 配置示意，不可不修改就运行。目标：重任务串行，避免未知峰值叠加。
+# 安装的 llama-swap 版本必须支持 routing.router 结构。
+# 不包含 API 密钥。先仅监听127.0.0.1，远程访问另做鉴权与网络设计。
+healthCheckTimeout: 600
+globalTTL: 0
+unloadTimeout: 60
+models:
+  # 仅替换两个本地绝对路径即可采用此参数结构；需先核验模型架构与许可。
+  # b11669参数；不带-hf，不联网取权重；与图像/音频共享heavy互斥组。
+  gguf-llm:
+    cmd: >-
+      /ABSOLUTE/PATH/TO/llama-server
+      --model "/ABSOLUTE/PATH/TO/your-compatible-model.gguf"
+      --alias gguf-llm --host 127.0.0.1 --port 18081
+      --ctx-size 4096 --parallel 1 --n-gpu-layers 99 --offline
+    proxy: http://127.0.0.1:18081
+    checkEndpoint: /health
+  sd-service:
+    cmd: /ABSOLUTE/PATH/TO/start-sd-service.sh
+    proxy: http://127.0.0.1:12345
+    # 请按固定的sd-server版本确认健康路径，不用none绕过模型加载检查。
+    checkEndpoint: /REPLACE_WITH_VERIFIED_HEALTH_ENDPOINT
+  audio-service:
+    cmd: /ABSOLUTE/PATH/TO/start-audio-service.sh
+    proxy: http://127.0.0.1:18080
+    checkEndpoint: /REPLACE_WITH_VERIFIED_HEALTH_ENDPOINT
+routing:
+  router:
+    use: group
+    settings:
+      groups:
+        heavy:
+          swap: true
+          exclusive: true
+          persistent: false
+          members: [gguf-llm, sd-service, audio-service]
+# 所有包装脚本最后用 exec 在前台运行实际服务程序；不要转成后台守护进程。
+# 不要给各推理后端分别配置launchd KeepAlive，否则被卸载后会自动复活。
+# 该规则不保护 HTTP 提交已返回但后台仍执行的异步任务。
+# 在接入生命周期网关前，不得把本文件当异步生成安全调度的完整实现。

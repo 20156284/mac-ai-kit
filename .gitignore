@@ -1,0 +1,41 @@
+# 系统和编辑器文件
+.DS_Store
+.AppleDouble/
+._*
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python / Node 本地环境和测试产物
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+node_modules/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 本地凭据、日志和配置；示例文件仍可提交
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.log
+
+# 用户生成内容与大模型；不要把下载目录放进源码库
+/models/
+/Mac-AI-Models/
+/Mac-AI-Manifests/
+# Benchmark 报告、日志与缓存均保留在本地
+/output/
+/outputs/
+/dist/
+/build/
+*.safetensors
+*.gguf
+*.part
+CHANGELOG.md

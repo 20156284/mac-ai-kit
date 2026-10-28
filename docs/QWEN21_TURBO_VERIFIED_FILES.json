@@ -1,0 +1,205 @@
+{
+  "models": [
+    {
+      "id": "qwen21-turbo",
+      "name": "Qwen-Image 2.1 Turbo BF16（原生透明背景）",
+      "short_name": "Comfy-Org / Qwen-Image 2.1 Turbo BF16（原生透明背景）",
+      "repo_id": "Comfy-Org/Qwen-Image-2.1",
+      "revision": "master",
+      "subdir": "images/Qwen-Image-2.1-Turbo",
+      "bundle_dir": "images/Qwen-Image-2.1-Turbo",
+      "precision": "BF16 safetensors，未量化",
+      "license": "Qwen Research License",
+      "license_url": "https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo/blob/main/LICENSE",
+      "license_notice": "仅限非商业研究或评估；商用须另获Qwen许可。格式转换或魔搭镜像不解除限制。",
+      "source_url": "https://modelscope.cn/models/Comfy-Org/Qwen-Image-2.1",
+      "enabled": true,
+      "include": [
+        "diffusion_models/qwen_image_2.1_turbo_bf16.safetensors",
+        "README.md",
+        "LICENSE*"
+      ],
+      "disk_gb": 14.230280616,
+      "readiness": "verified_components_and_pinned_runtime_source_not_mac_tested",
+      "runtime": "stable-diffusion.cpp",
+      "requires": [
+        "qwen21-text",
+        "qwen21-vae"
+      ],
+      "notes": "官方 Qwen Turbo 完整主干，由 Comfy-Org 重打包；8步、CFG 1、Euler。原生 RGBA，输出 PNG/WebP 保留透明，JPG不保留。不是 Viggle/社区加速 LoRA；不自动下载普通版、量化版或 PE 模型。",
+      "expected_files": {
+        "diffusion_models/qwen_image_2.1_turbo_bf16.safetensors": {
+          "bytes": 14230280616,
+          "sha256": "8b74237a7f505773e2c66726fa696444b4c704585c93a347cff9044937f7914a"
+        }
+      },
+      "component": false,
+      "group": "image_video",
+      "verification": {
+        "checked_at": "2026-10-21",
+        "files_api": "https://modelscope.cn/api/v1/models/Comfy-Org/Qwen-Image-2.1/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "file_last_commit_revision": "8c798285d642b81a1af415b70f2e444e809820d7",
+        "upstream_lfs_comparison": "魔搭与Hugging Face同名文件大小及SHA256一致；未下载权重。",
+        "runtime_docs": "https://github.com/leejet/stable-diffusion.cpp/blob/master-975-95b3090/docs/qwen_image_2.1.md"
+      }
+    },
+    {
+      "id": "qwen21-text",
+      "name": "Qwen 2.1 Qwen3-VL 8B BF16 编码器",
+      "short_name": "Comfy-Org / Qwen 2.1 Qwen3-VL 8B BF16 编码器",
+      "repo_id": "Comfy-Org/Qwen-Image-2.1",
+      "revision": "master",
+      "subdir": "images/Qwen-Image-2.1-Turbo",
+      "bundle_dir": "images/Qwen-Image-2.1-Turbo",
+      "precision": "BF16 safetensors，未量化",
+      "license": "Qwen Research License",
+      "license_url": "https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo/blob/main/LICENSE",
+      "license_notice": "仅限非商业研究或评估；商用须另获Qwen许可。格式转换或魔搭镜像不解除限制。",
+      "source_url": "https://modelscope.cn/models/Comfy-Org/Qwen-Image-2.1",
+      "enabled": true,
+      "include": [
+        "text_encoders/qwen3vl_8b_bf16.safetensors",
+        "README.md",
+        "LICENSE*"
+      ],
+      "disk_gb": 17.534334616,
+      "readiness": "verified_components_and_pinned_runtime_source_not_mac_tested",
+      "runtime": "stable-diffusion.cpp",
+      "requires": [],
+      "notes": "Qwen-Image-2.1-Turbo必要组件。编码器使用完整BF16 safetensors；VAE必须为2.1专属版本，不可替换成旧Qwen/Wan VAE。",
+      "expected_files": {
+        "text_encoders/qwen3vl_8b_bf16.safetensors": {
+          "bytes": 17534334616,
+          "sha256": "68bdc82bc1b66851162ae656225e7e2068166b603db19bd5d5a3b90eb12669a9"
+        }
+      },
+      "component": true,
+      "group": "image_video",
+      "verification": {
+        "checked_at": "2026-10-21",
+        "files_api": "https://modelscope.cn/api/v1/models/Comfy-Org/Qwen-Image-2.1/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "file_last_commit_revision": "5dc8a8352312860d67e07cc9bee310dc7ed3e55c",
+        "upstream_lfs_comparison": "魔搭与Hugging Face同名文件大小及SHA256一致；未下载权重。",
+        "runtime_docs": "https://github.com/leejet/stable-diffusion.cpp/blob/master-975-95b3090/docs/qwen_image_2.1.md"
+      }
+    },
+    {
+      "id": "qwen21-vae",
+      "name": "Qwen 2.1 专属 RGBA VAE BF16",
+      "short_name": "Comfy-Org / Qwen 2.1 专属 RGBA VAE BF16",
+      "repo_id": "Comfy-Org/Qwen-Image-2.1",
+      "revision": "master",
+      "subdir": "images/Qwen-Image-2.1-Turbo",
+      "bundle_dir": "images/Qwen-Image-2.1-Turbo",
+      "precision": "BF16 safetensors，未量化",
+      "license": "Qwen Research License",
+      "license_url": "https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo/blob/main/LICENSE",
+      "license_notice": "仅限非商业研究或评估；商用须另获Qwen许可。格式转换或魔搭镜像不解除限制。",
+      "source_url": "https://modelscope.cn/models/Comfy-Org/Qwen-Image-2.1",
+      "enabled": true,
+      "include": [
+        "vae/qwen_image_2.1_vae_bf16.safetensors",
+        "README.md",
+        "LICENSE*"
+      ],
+      "disk_gb": 0.675509688,
+      "readiness": "verified_components_and_pinned_runtime_source_not_mac_tested",
+      "runtime": "stable-diffusion.cpp",
+      "requires": [],
+      "notes": "Qwen-Image-2.1-Turbo必要组件。编码器使用完整BF16 safetensors；VAE必须为2.1专属版本，不可替换成旧Qwen/Wan VAE。",
+      "expected_files": {
+        "vae/qwen_image_2.1_vae_bf16.safetensors": {
+          "bytes": 675509688,
+          "sha256": "bb21f7473051e1ac368515dd3f2e15cd44d7a11748ee8823e1ddca3e4876b7c9"
+        }
+      },
+      "component": true,
+      "group": "image_video",
+      "verification": {
+        "checked_at": "2026-10-21",
+        "files_api": "https://modelscope.cn/api/v1/models/Comfy-Org/Qwen-Image-2.1/repo/files?Revision=master&Recursive=true",
+        "revision_is_mutable": true,
+        "file_last_commit_revision": "5dc8a8352312860d67e07cc9bee310dc7ed3e55c",
+        "upstream_lfs_comparison": "魔搭与Hugging Face同名文件大小及SHA256一致；未下载权重。",
+        "runtime_docs": "https://github.com/leejet/stable-diffusion.cpp/blob/master-975-95b3090/docs/qwen_image_2.1.md"
+      }
+    }
+  ],
+  "total_weight_bytes": 32440124920,
+  "runtime": {
+    "tag": "master-975-95b3090",
+    "upgrade_required_for_feature": false,
+    "verification_level": "固定tag文档含Turbo sigma预设及alpha输出；CLI保存沿用生成图像channel。未运行Mac二进制或模型。",
+    "sampling_args": [
+      "--sigmas",
+      "qwen-image-2.1-turbo",
+      "--steps",
+      "8",
+      "--cfg-scale",
+      "1.0",
+      "--sampling-method",
+      "euler"
+    ],
+    "weights_args": {
+      "--diffusion-model": "diffusion_models/qwen_image_2.1_turbo_bf16.safetensors",
+      "--llm": "text_encoders/qwen3vl_8b_bf16.safetensors",
+      "--vae": "vae/qwen_image_2.1_vae_bf16.safetensors"
+    },
+    "transparent_prompt": "This is an RGBA image with transparency. <your description>. The image has alpha channel and the background is transparent.",
+    "output_formats_preserving_alpha": [
+      "png",
+      "webp"
+    ],
+    "dimensions": "width and height divisible by 32",
+    "tokenizer": "固定tag文档的safetensors组合未要求外置tokenizer；与MOSS的--tokenizer需求不同。",
+    "vision": "固定tag文档允许Comfy BF16 safetensors编码器；只有GGUF编码器路径明确要求另传mmproj，本清单不使用GGUF。"
+  },
+  "evidence": [
+    "https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo",
+    "https://modelscope.cn/models/Comfy-Org/Qwen-Image-2.1/resolve/master/README.md",
+    "https://github.com/leejet/stable-diffusion.cpp/blob/master-975-95b3090/docs/qwen_image_2.1.md"
+  ],
+  "caveats": [
+    "master是可变revision；file_last_commit_revision不是整仓snapshot，不应当作全包revision。用expected_files核对实际字节和SHA。",
+    "三个大文件为同名Comfy打包文件，SHA已跨HF/魔搭一致；未声称与上游分片文件SHA一致。",
+    "README为辅助文件不计入权重总量。官方LICENSE可从Qwen原模型仓库另取，Comfy镜像树未含LICENSE。"
+  ],
+  "license_verified": {
+    "url": "https://modelscope.cn/models/Qwen/Qwen-Image-2.1-Turbo/resolve/master/LICENSE",
+    "bytes": 7831,
+    "sha256": "8dc973f024ff95966bea25866efa443fd16776dcb1001e681e3d467ea572b28d",
+    "file_last_commit_revision": "3d11fcb9828695097c898213e62f9d807eb02872",
+    "scope": "仅限非商业研究或评估；商用须另获许可，不能把非商业解释成任意免费用途。",
+    "commercial_contact": "model-business@notice.qwencloud.com",
+    "redistribution": "需附LICENSE并按条款保留Notice与修改说明。",
+    "local_review_copy": "/tmp/q21_license"
+  },
+  "optional_license_catalog_entry": {
+    "id": "qwen21-license",
+    "name": "Qwen 2.1 Turbo 官方许可证",
+    "repo_id": "Qwen/Qwen-Image-2.1-Turbo",
+    "revision": "master",
+    "subdir": "images/Qwen-Image-2.1/licenses/Qwen-Image-2.1-Turbo",
+    "precision": "不适用",
+    "license": "Qwen Research License",
+    "license_url": "https://modelscope.cn/models/Qwen/Qwen-Image-2.1-Turbo/resolve/master/LICENSE",
+    "source_url": "https://modelscope.cn/models/Qwen/Qwen-Image-2.1-Turbo",
+    "enabled": true,
+    "component": true,
+    "group": "image_video",
+    "include": [
+      "LICENSE"
+    ],
+    "disk_gb": 7.831e-06,
+    "requires": [],
+    "expected_files": {
+      "LICENSE": {
+        "bytes": 7831,
+        "sha256": "8dc973f024ff95966bea25866efa443fd16776dcb1001e681e3d467ea572b28d"
+      }
+    },
+    "notes": "仅附官方许可文本；不下载官方整包或额外权重。"
+  }
+}
