@@ -3,6 +3,7 @@
 
 安装计划是本次操作的快照，不是固定版本。完整包凭据用于检测被修改或缺失的运行库。
 """
+
 import argparse
 import hashlib
 import json
@@ -24,8 +25,8 @@ REPOSITORY = 'leejet/stable-diffusion.cpp'
 API = 'https://api.github.com/repos/' + REPOSITORY + '/releases/'
 DOWNLOAD = 'https://github.com/' + REPOSITORY + '/releases/download/'
 RECEIPT = '.mac-ai-kit-release.json'
-MAX_ARCHIVE = 2 * 1024 ** 3
-MAX_EXPANDED = 4 * 1024 ** 3
+MAX_ARCHIVE = 2 * 1024**3
+MAX_EXPANDED = 4 * 1024**3
 
 
 def read_json_url(url):
@@ -40,7 +41,11 @@ def validate_plan(plan):
     tag, name = plan.get('tag', ''), plan.get('asset_name', '')
     if not isinstance(tag, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._+-]*', tag):
         raise ValueError('发行 tag 无效')
-    if not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9._+-]+', name) or not (name.endswith('.zip') and 'Darwin' in name and 'arm64' in name):
+    if (
+        not isinstance(name, str)
+        or not re.fullmatch(r'[A-Za-z0-9._+-]+', name)
+        or not (name.endswith('.zip') and 'Darwin' in name and 'arm64' in name)
+    ):
         raise ValueError('不是 macOS ARM64 ZIP')
     if plan.get('download_url') != DOWNLOAD + tag + '/' + name:
         raise ValueError('下载地址不是官方发行资源')
@@ -52,16 +57,30 @@ def validate_plan(plan):
 def release_plan(release):
     if release.get('draft') or release.get('prerelease'):
         raise ValueError('latest 必须是非草稿、非预发行版本')
-    matches = [a for a in release.get('assets', []) if isinstance(a.get('name'), str)
-               and 'Darwin' in a['name'] and 'arm64' in a['name'] and a['name'].endswith('.zip')]
+    matches = [
+        a
+        for a in release.get('assets', [])
+        if isinstance(a.get('name'), str)
+        and 'Darwin' in a['name']
+        and 'arm64' in a['name']
+        and a['name'].endswith('.zip')
+    ]
     if len(matches) != 1:
         raise ValueError('官方发行必须有且只有一个 macOS ARM64 ZIP')
     asset = matches[0]
     digest = asset.get('digest') or ''
     if not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
         raise ValueError('官方资源缺少 SHA256 digest；拒绝安装')
-    return validate_plan(dict(schema=1, repository=REPOSITORY, tag=release.get('tag_name'),
-                              asset_name=asset['name'], download_url=asset.get('browser_download_url'), sha256=digest[7:]))
+    return validate_plan(
+        dict(
+            schema=1,
+            repository=REPOSITORY,
+            tag=release.get('tag_name'),
+            asset_name=asset['name'],
+            download_url=asset.get('browser_download_url'),
+            sha256=digest[7:],
+        )
+    )
 
 
 def resolve_latest():
@@ -97,10 +116,18 @@ def safe_extract(archive, destination):
             path = PurePosixPath(name)
             mode = item.external_attr >> 16
             normalized = str(path).casefold()
-            if (not name or '\\' in name or '\x00' in name or '\n' in name or '\r' in name
-                    or path.is_absolute() or '..' in path.parts or normalized in seen
-                    or any(p in ('', '.') for p in name.rstrip('/').split('/'))
-                    or (stat.S_IFMT(mode) not in (0, stat.S_IFREG, stat.S_IFDIR))):
+            if (
+                not name
+                or '\\' in name
+                or '\x00' in name
+                or '\n' in name
+                or '\r' in name
+                or path.is_absolute()
+                or '..' in path.parts
+                or normalized in seen
+                or any(p in ('', '.') for p in name.rstrip('/').split('/'))
+                or (stat.S_IFMT(mode) not in (0, stat.S_IFREG, stat.S_IFDIR))
+            ):
                 raise ValueError('发行 ZIP 含不安全或重复路径: ' + name)
             seen.add(normalized)
             if path.name == RECEIPT:
@@ -113,7 +140,9 @@ def safe_extract(archive, destination):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with package.open(item) as source, open(target, 'xb') as sink:
                     shutil.copyfileobj(source, sink)
-                target.chmod(0o755 if (item.external_attr >> 16) & 0o111 or target.name in ('sd-server', 'sd-cli') else 0o644)
+                target.chmod(
+                    0o755 if (item.external_attr >> 16) & 0o111 or target.name in ('sd-server', 'sd-cli') else 0o644
+                )
 
 
 def macho_minimum(data):
@@ -121,7 +150,7 @@ def macho_minimum(data):
     if len(data) < 8:
         raise ValueError('不是有效 Mach-O')
     if data[:4] in (b'\xca\xfe\xba\xbe', b'\xca\xfe\xba\xbf', b'\xbe\xba\xfe\xca', b'\xbf\xba\xfe\xca'):
-        endian = '>' if data[0] == 0xca else '<'
+        endian = '>' if data[0] == 0xCA else '<'
         is64 = data[:4] in (b'\xca\xfe\xba\xbf', b'\xbf\xba\xfe\xca')
         count = struct.unpack_from(endian + 'I', data, 4)[0]
         width = 32 if is64 else 20
@@ -134,15 +163,15 @@ def macho_minimum(data):
             start, length = struct.unpack_from(endian + ('QQ' if is64 else 'II'), data, offset + 8)
             if start < 8 + count * width or length < 32 or start + length > len(data):
                 raise ValueError('Fat Mach-O 切片越界')
-            if cpu == 0x100000c:
-                slices.append(macho_minimum(data[start:start + length]))
+            if cpu == 0x100000C:
+                slices.append(macho_minimum(data[start : start + length]))
         if len(slices) != 1:
             raise ValueError('需要唯一 ARM64 Mach-O 切片')
         return slices[0]
     if data[:4] != b'\xcf\xfa\xed\xfe' or len(data) < 32:
         raise ValueError('需要 64 位 ARM64 Mach-O，不接受脚本或其他架构')
     _, cpu, _, _, count, size, _, _ = struct.unpack_from('<8I', data)
-    if cpu != 0x100000c or size > len(data) - 32 or count > size // 8:
+    if cpu != 0x100000C or size > len(data) - 32 or count > size // 8:
         raise ValueError('Mach-O 架构或命令长度无效')
     cursor, minimums = 32, []
     for _ in range(count):
@@ -187,8 +216,12 @@ def inspect_runtime(folder):
     required = (b'--model-dir', b'/sdcpp/v1/models/load', b'/sdcpp/v1/models/status')
     if not all(token in binaries[0].read_bytes() for token in required):
         raise ValueError('发行 sd-server 缺少 --model-dir 或 load/status 模型管理 API；不会回退到旧版')
-    return dict(binary_relative=binaries[0].relative_to(folder).as_posix(), files=files,
-                minimum_macos='.'.join(map(str, max(minimums))), model_directory_capable=True)
+    return dict(
+        binary_relative=binaries[0].relative_to(folder).as_posix(),
+        files=files,
+        minimum_macos='.'.join(map(str, max(minimums))),
+        model_directory_capable=True,
+    )
 
 
 def validate_installed(folder):
@@ -269,7 +302,10 @@ def owned_entry(root, snapshot, current):
             continue
         # 旧凭据没有完整文件清单；必须向官方 tag 元数据核验摘要，
         # 且旧包装脚本逐字一致，才允许更新入口。
-        match = re.fullmatch(r'([0-9a-f]{64})  (https://github.com/leejet/stable-diffusion.cpp/releases/download/([^/]+)/[^\s]+)\n', receipt.read_text())
+        match = re.fullmatch(
+            r'([0-9a-f]{64})  (https://github.com/leejet/stable-diffusion.cpp/releases/download/([^/]+)/[^\s]+)\n',
+            receipt.read_text(),
+        )
         if not match:
             continue
         try:
@@ -315,6 +351,7 @@ def install(root, plan):
     entry = bindir / 'sd-server'
     initial = entry_snapshot(entry)
     managed = owned_entry(root, initial, current)
+
     def publish_entry(metadata):
         if not managed:
             return
@@ -333,6 +370,7 @@ def install(root, plan):
         finally:
             if os.path.exists(name):
                 os.unlink(name)
+
     if current and all(current[k] == plan[k] for k in ('tag', 'sha256', 'download_url')):
         check_host(current['minimum_macos'])
         metadata = current

@@ -1,4 +1,5 @@
 """Agent 调度约定的追加与引用路径回归；不启动服务或访问用户电脑。"""
+
 import importlib.util
 import json
 from pathlib import Path
@@ -30,7 +31,15 @@ class AgentWorkflowTests(unittest.TestCase):
 
     def test_policy_is_user_requested_and_preserves_warm_llm(self):
         text = self.append()
-        for phrase in ('用户指定的资源使用策略', '不是各框架天生不能并行', '不关闭或卸载 LLM', 'LLM 已加载并能响应', '不默认启动全部', '不是任务取消授权', 'JSON 中的 unknown'):
+        for phrase in (
+            '用户指定的资源使用策略',
+            '不是各框架天生不能并行',
+            '不关闭或卸载 LLM',
+            'LLM 已加载并能响应',
+            '不默认启动全部',
+            '不是任务取消授权',
+            'JSON 中的 unknown',
+        ):
             self.assertIn(phrase, text)
         self.assertNotIn('--if-idle', text)
         self.assertNotIn(' stop --service all', text)
@@ -40,7 +49,17 @@ class AgentWorkflowTests(unittest.TestCase):
         self.assertEqual(len(commands), 8)
         for command in commands:
             args = shlex.split(command)
-            self.assertEqual(args[:6], ['python3', str(self.toolkit / 'scripts/native_services.py'), '--root', str(self.root), '--models-dir', str(self.models)])
+            self.assertEqual(
+                args[:6],
+                [
+                    'python3',
+                    str(self.toolkit / 'scripts/native_services.py'),
+                    '--root',
+                    str(self.root),
+                    '--models-dir',
+                    str(self.models),
+                ],
+            )
             self.assertIn(args[6], ('status', 'start', 'stop'))
 
     def test_repeated_policy_preserves_existing_manual_crlf_bytes(self):
@@ -69,7 +88,7 @@ class AgentWorkflowTests(unittest.TestCase):
         returned = self.append(moved)
         self.assertTrue(returned.startswith(moved))
         self.assertEqual(returned.count('MAC-AI-KIT:AGENT-WORKFLOW:'), 3)
-        self.assertIn(shlex.quote(str(self.toolkit / 'scripts/native_services.py')), returned[len(moved):])
+        self.assertIn(shlex.quote(str(self.toolkit / 'scripts/native_services.py')), returned[len(moved) :])
         self.assertEqual(self.append(returned), returned)
 
     def test_explicit_api_update_appends_policy_once_outside_replaceable_block(self):
@@ -91,10 +110,23 @@ class AgentWorkflowTests(unittest.TestCase):
         self.assertGreater(content.index('MAC-AI-KIT:AGENT-WORKFLOW'), content.index(api.END))
 
     def test_explicit_main_uses_real_toolkit_and_passed_service_root(self):
-        catalog = self.base / 'catalog.json'; catalog.write_text('{"models": []}')
-        templates = self.base / 'templates.json'; templates.write_text('{"runtimes": []}')
+        catalog = self.base / 'catalog.json'
+        catalog.write_text('{"models": []}')
+        templates = self.base / 'templates.json'
+        templates.write_text('{"runtimes": []}')
         with patch('builtins.print'):
-            result = api.main(['--directory', str(self.models), '--catalog', str(catalog), '--templates', str(templates), '--services-root', str(self.root)])
+            result = api.main(
+                [
+                    '--directory',
+                    str(self.models),
+                    '--catalog',
+                    str(catalog),
+                    '--templates',
+                    str(templates),
+                    '--services-root',
+                    str(self.root),
+                ]
+            )
         self.assertEqual(result, 0)
         content = (self.models / 'API.md').read_text()
         self.assertIn(shlex.quote(str(ROOT / 'scripts/native_services.py')), content)
@@ -102,16 +134,35 @@ class AgentWorkflowTests(unittest.TestCase):
         self.assertFalse(self.root.exists())
 
     def test_if_present_keeps_empty_directory_unchanged(self):
-        catalog = self.base / 'catalog.json'; catalog.write_text('{"models": []}')
-        templates = self.base / 'templates.json'; templates.write_text('{"runtimes": []}')
+        catalog = self.base / 'catalog.json'
+        catalog.write_text('{"models": []}')
+        templates = self.base / 'templates.json'
+        templates.write_text('{"runtimes": []}')
         with patch('builtins.print'):
-            result = api.main(['--directory', str(self.models), '--catalog', str(catalog), '--templates', str(templates), '--if-present'])
+            result = api.main(
+                [
+                    '--directory',
+                    str(self.models),
+                    '--catalog',
+                    str(catalog),
+                    '--templates',
+                    str(templates),
+                    '--if-present',
+                ]
+            )
         self.assertEqual(result, 0)
         self.assertFalse((self.models / 'API.md').exists())
 
     def test_health_and_unload_are_not_claimed_as_atomic_stop_guards(self):
         text = self.append()
-        for phrase in ('所有提交方停止新请求', '所有同步与异步任务及队列已完成', '向用户确认当前可停止', '不是全局停机屏障', '退出码非零', 'model_residency=empty/ready 也不是 idle'):
+        for phrase in (
+            '所有提交方停止新请求',
+            '所有同步与异步任务及队列已完成',
+            '向用户确认当前可停止',
+            '不是全局停机屏障',
+            '退出码非零',
+            'model_residency=empty/ready 也不是 idle',
+        ):
             self.assertIn(phrase, text)
 
 

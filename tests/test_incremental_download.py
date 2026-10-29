@@ -1,4 +1,5 @@
 """增量下载回归：小文件和模拟容量，不联网、不下载真实模型。"""
+
 import contextlib
 import hashlib
 import io
@@ -15,9 +16,12 @@ import download_models as m
 
 
 def model(key='main', relative='llm/Main', payload=b'known model'):
-    return {'id': key, 'repo_id': 'owner/Main' if key == 'main' else 'owner/' + key,
-            'subdir': relative, 'expected_files': {'weights.bin': {
-                'bytes': len(payload), 'sha256': hashlib.sha256(payload).hexdigest()}}}
+    return {
+        'id': key,
+        'repo_id': 'owner/Main' if key == 'main' else 'owner/' + key,
+        'subdir': relative,
+        'expected_files': {'weights.bin': {'bytes': len(payload), 'sha256': hashlib.sha256(payload).hexdigest()}},
+    }
 
 
 class IncrementalDownloadTests(unittest.TestCase):
@@ -63,7 +67,8 @@ class IncrementalDownloadTests(unittest.TestCase):
         for relative in ('llm/Main', 'owner/Main'):
             with self.subTest(relative=relative), tempfile.TemporaryDirectory() as temp:
                 root = Path(temp)
-                main = model(); main['expected_files']['weights.bin']['bytes'] = 54_743_807_404
+                main = model()
+                main['expected_files']['weights.bin']['bytes'] = 54_743_807_404
                 self.write(root / relative)
                 head = model('mtp', 'llm/Main/mtp')
                 head['expected_files']['weights.bin']['bytes'] = 849_400_335
@@ -71,7 +76,9 @@ class IncrementalDownloadTests(unittest.TestCase):
                 head['generated_expected_files'] = {'compatible.bin': {'bytes': 849_400_400}}
                 head['final_only_adaptation'] = True
                 plans = [(head, root / head['subdir'], []), (main, root / main['subdir'], [])]
-                with mock.patch.object(m, 'verify_file', side_effect=lambda path, spec, strict=False: spec['bytes'] == 54_743_807_404):
+                with mock.patch.object(
+                    m, 'verify_file', side_effect=lambda path, spec, strict=False: spec['bytes'] == 54_743_807_404
+                ):
                     rows = m.download_preflight(plans, [], [head, main], base=root)
                 self.assertEqual(rows[1]['existing'], 54_743_807_404)
                 self.assertEqual(sum(r['network'] for r in rows), 849_400_335)
@@ -91,11 +98,17 @@ class IncrementalDownloadTests(unittest.TestCase):
         self.model['expected_files']['config.json'] = {'bytes': 2, 'sha256': hashlib.sha256(b'{}').hexdigest()}
         row = self.plan()
         self.assertEqual(row['network'], 2)
+
         def fake_download(args, check):
-            includes = [args[i+1] for i, arg in enumerate(args) if arg == '--include']
+            includes = [args[i + 1] for i, arg in enumerate(args) if arg == '--include']
             self.assertEqual(includes, ['config.json'])
-            stage = Path(args[args.index('--local-dir')+1]); (stage / 'config.json').write_bytes(b'{}')
-        with mock.patch.object(m.subprocess, 'run', side_effect=fake_download), contextlib.redirect_stdout(io.StringIO()):
+            stage = Path(args[args.index('--local-dir') + 1])
+            (stage / 'config.json').write_bytes(b'{}')
+
+        with (
+            mock.patch.object(m.subprocess, 'run', side_effect=fake_download),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             m.download_verified_bundle('unused', self.model, self.folder, 1, [], [self.model])
 
     def test_completed_stage_deducted_without_network(self):
@@ -123,7 +136,8 @@ class IncrementalDownloadTests(unittest.TestCase):
         self.assertEqual(path.read_bytes(), b'corrupt')
 
     def test_discovery_does_not_follow_directory_links_or_unknown_deep_paths(self):
-        outside = Path(self.temp.name) / 'outside'; self.write(outside)
+        outside = Path(self.temp.name) / 'outside'
+        self.write(outside)
         (self.base / 'Main').symlink_to(outside, target_is_directory=True)
         self.write(self.base / 'unknown/deeper/location/Main')
         row = self.plan()
@@ -150,13 +164,24 @@ class IncrementalDownloadTests(unittest.TestCase):
         self.model['expected_files']['config.json'] = {'bytes': 2, 'sha256': hashlib.sha256(b'{}').hexdigest()}
         catalog = Path(self.temp.name) / 'catalog.json'
         catalog.write_text(json.dumps({'schema_version': 1, 'models': [self.model]}))
-        cli = Path(self.temp.name) / 'client'; cli.write_text('模拟客户端'); cli.chmod(0o700)
+        cli = Path(self.temp.name) / 'client'
+        cli.write_text('模拟客户端')
+        cli.chmod(0o700)
+
         def fake_download(args, check):
-            includes = [args[i+1] for i, arg in enumerate(args) if arg == '--include']
+            includes = [args[i + 1] for i, arg in enumerate(args) if arg == '--include']
             self.assertEqual(includes, ['config.json'])
-            (Path(args[args.index('--local-dir')+1]) / 'config.json').write_bytes(b'{}')
-        with mock.patch.object(m.platform, 'system', return_value='Darwin'), mock.patch.object(m.shutil, 'disk_usage', return_value=mock.Mock(free=2)), mock.patch.object(m.subprocess, 'run', side_effect=fake_download) as run, contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(m.main(['--catalog', str(catalog), '--select', 'main', '--dest', str(self.base), '--cli', str(cli)]), 0)
+            (Path(args[args.index('--local-dir') + 1]) / 'config.json').write_bytes(b'{}')
+
+        with (
+            mock.patch.object(m.platform, 'system', return_value='Darwin'),
+            mock.patch.object(m.shutil, 'disk_usage', return_value=mock.Mock(free=2)),
+            mock.patch.object(m.subprocess, 'run', side_effect=fake_download) as run,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(
+                m.main(['--catalog', str(catalog), '--select', 'main', '--dest', str(self.base), '--cli', str(cli)]), 0
+            )
         self.assertEqual(run.call_count, 1)
         self.assertEqual((self.folder / 'config.json').read_bytes(), b'{}')
 
@@ -170,8 +195,23 @@ class IncrementalDownloadTests(unittest.TestCase):
         catalog = Path(self.temp.name) / 'catalog.json'
         catalog.write_text(json.dumps({'schema_version': 1, 'models': [self.model]}))
         output = io.StringIO()
-        with mock.patch.object(m.platform, 'system', return_value='Darwin'), mock.patch.object(m.subprocess, 'run') as run, contextlib.redirect_stdout(output):
-            result = m.main(['--catalog', str(catalog), '--select', 'main', '--dest', str(self.base), '--cli', '/nonexistent/client'])
+        with (
+            mock.patch.object(m.platform, 'system', return_value='Darwin'),
+            mock.patch.object(m.subprocess, 'run') as run,
+            contextlib.redirect_stdout(output),
+        ):
+            result = m.main(
+                [
+                    '--catalog',
+                    str(catalog),
+                    '--select',
+                    'main',
+                    '--dest',
+                    str(self.base),
+                    '--cli',
+                    '/nonexistent/client',
+                ]
+            )
         self.assertEqual(result, 0)
         run.assert_not_called()
         self.assertIn('无需重复下载', output.getvalue())

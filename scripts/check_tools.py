@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """只读检查文件元数据与进程名称，绝不执行组件代码。"""
+
 import argparse
 import os
 import json
@@ -13,18 +14,38 @@ import sys
 # 不匹配通用 python、node 或 server 名称，避免误认其他进程。
 COMPONENTS = (
     ('MLX-Serve App', (), ('mlx-serve', 'MLX-Serve', 'MLX Core'), ('mlx-serve.json', 'mlx-serve.yaml')),
-    ('llama.cpp', ('llama-server', 'llama-cli'), ('llama-server', 'llama-cli'), ('llama-server.json', 'llama-server.yaml')),
+    (
+        'llama.cpp',
+        ('llama-server', 'llama-cli'),
+        ('llama-server', 'llama-cli'),
+        ('llama-server.json', 'llama-server.yaml'),
+    ),
     ('llama-swap', ('llama-swap',), ('llama-swap',), ('llama-swap.yaml', 'llama-swap.yml')),
     ('sd.cpp', ('sd-server', 'sd-cli'), ('sd-server', 'sd-cli'), ('sd-server.json', 'sd-server.yaml')),
-    ('audio.cpp', ('audiocpp_server', 'audiocpp'), ('audiocpp_server', 'audiocpp'), ('audio-server.json', 'qwen-asr-server.json', 'yue2-server.json')),
+    (
+        'audio.cpp',
+        ('audiocpp_server', 'audiocpp'),
+        ('audiocpp_server', 'audiocpp'),
+        ('audio-server.json', 'qwen-asr-server.json', 'yue2-server.json'),
+    ),
     ('Hermes', ('hermes',), ('hermes', 'hermes-agent'), ('hermes/config.yaml',)),
-    ('Remotion（可选）', ('remotion',), (), ('remotion/remotion.config.ts', 'remotion/remotion.config.js', 'remotion.config.ts', 'remotion.config.js')),
+    (
+        'Remotion（可选）',
+        ('remotion',),
+        (),
+        ('remotion/remotion.config.ts', 'remotion/remotion.config.js', 'remotion.config.ts', 'remotion.config.js'),
+    ),
 )
 
 
 def safe_path(value):
     path = Path(value).expanduser()
-    if not path.is_absolute() or path == Path('/') or '..' in path.parts or any(ord(c) < 32 or ord(c) == 127 for c in str(path)):
+    if (
+        not path.is_absolute()
+        or path == Path('/')
+        or '..' in path.parts
+        or any(ord(c) < 32 or ord(c) == 127 for c in str(path))
+    ):
         raise ValueError('目录必须为绝对路径，不能是根目录、含控制字符或 ..')
     return path
 
@@ -55,8 +76,7 @@ def read_processes():
     # 使用系统 ps 的绝对路径，不经 PATH，不收集参数或环境变量。
     ps = '/bin/ps' if Path('/bin/ps').is_file() else '/usr/bin/ps'
     try:
-        result = subprocess.run([ps, '-axo', 'pid=,comm='], capture_output=True,
-                                text=True, timeout=5, check=False)
+        result = subprocess.run([ps, '-axo', 'pid=,comm='], capture_output=True, text=True, timeout=5, check=False)
         if result.returncode != 0:
             return None
         return parse_processes(result.stdout)
@@ -136,8 +156,11 @@ def inventory(root, home, processes):
         installed = probe(binaries, executable=True)
         app_state = None
         if name.startswith('MLX'):
-            apps = [base / app for base in (home / 'Applications', Path('/Applications'))
-                    for app in ('MLX-Serve.app', 'MLX Core.app')]
+            apps = [
+                base / app
+                for base in (home / 'Applications', Path('/Applications'))
+                for app in ('MLX-Serve.app', 'MLX Core.app')
+            ]
             app_state = state_text(probe(apps, directory=True), '未发现')
             installed += probe(apps, directory=True)
         config_paths = [root / 'config' / p for p in configs] + [root / p for p in configs]
@@ -152,16 +175,27 @@ def inventory(root, home, processes):
         if not aliases:
             configured += remotion_configs(home)
         pids = sorted({pid for pid, comm in (processes or []) if comm in aliases})
-        runtime = ('发现 PID ' + ','.join(map(str, pids)) if pids else
-                   '未核实' if processes is None else
-                   '未核实' if not aliases else
-                   '未发现')
+        runtime = (
+            '发现 PID ' + ','.join(map(str, pids))
+            if pids
+            else '未核实'
+            if processes is None
+            else '未核实'
+            if not aliases
+            else '未发现'
+        )
         install_text = state_text(installed, '未发现')
         if app_state is not None:
             install_text = 'App：' + app_state
-        rows.append({'name': name, 'installed': install_text,
-                     'configured': state_text(configured, '未发现'),
-                     'process': runtime, 'probes': installed + configured})
+        rows.append(
+            {
+                'name': name,
+                'installed': install_text,
+                'configured': state_text(configured, '未发现'),
+                'process': runtime,
+                'probes': installed + configured,
+            }
+        )
     return rows
 
 

@@ -1,4 +1,5 @@
 """ASR 新旧目录兼容；只用微型离线文件，不下载真实模型。"""
+
 import copy
 import hashlib
 import json
@@ -24,7 +25,10 @@ class AsrDirectoryLayout(unittest.TestCase):
         self.model = copy.deepcopy(next(m for m in catalog['models'] if m['id'] == 'asr-qwen3-1.7b-f16'))
         self.name = next(iter(self.model['expected_files']))
         self.data = b'ASR test fixture'
-        self.model['expected_files'][self.name] = {'bytes': len(self.data), 'sha256': hashlib.sha256(self.data).hexdigest()}
+        self.model['expected_files'][self.name] = {
+            'bytes': len(self.data),
+            'sha256': hashlib.sha256(self.data).hexdigest(),
+        }
         self.folder = self.base / self.model['subdir']
 
     def write(self, old=False, data=None):
@@ -80,8 +84,13 @@ class AsrDirectoryLayout(unittest.TestCase):
         row = downloader.download_preflight(plans, [], [self.model], base=self.base)[0]
         self.assertEqual(row['network'], 0)
         self.assertEqual(row['local_reuse'][self.name], old)
-        with patch.object(downloader.subprocess, 'run', side_effect=AssertionError('不应调用下载客户端')), self.assertRaisesRegex(ValueError, '旧目录文件保持原样'):
-            downloader.download_verified_bundle(Path('/no-client'), self.model, self.folder, 1, [], [self.model], row['local_reuse'])
+        with (
+            patch.object(downloader.subprocess, 'run', side_effect=AssertionError('不应调用下载客户端')),
+            self.assertRaisesRegex(ValueError, '旧目录文件保持原样'),
+        ):
+            downloader.download_verified_bundle(
+                Path('/no-client'), self.model, self.folder, 1, [], [self.model], row['local_reuse']
+            )
         new = self.folder / self.name
         self.assertTrue(old.is_file())
         self.assertFalse(new.exists())
@@ -94,6 +103,7 @@ class AsrDirectoryLayout(unittest.TestCase):
             p = stage / self.name
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_bytes(self.data)
+
         with patch.object(downloader.subprocess, 'run', side_effect=fake_download):
             downloader.download_verified_bundle(Path('/fake-client'), self.model, self.folder, 1, [], [self.model])
         self.assertTrue((self.folder / self.name).is_file())

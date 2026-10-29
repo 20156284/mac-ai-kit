@@ -1,4 +1,5 @@
 """微型离线测试数据；不下载权重、不联网、不执行客户端或模型。"""
+
 import contextlib
 import hashlib
 import importlib.util
@@ -22,13 +23,22 @@ class LocalMergeTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.base = Path(self.tmp.name).resolve() / 'models'
         self.data = b'shared tiny fixture'
+
         def metadata(data):
             return {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
-        self.models = [{'id': key, 'subdir': 'video/' + variant,
-                        'expected_files': {'common.bin': metadata(self.data),
-                                           'nested/shared.bin': metadata(self.data),
-                                           'transformer.bin': metadata(variant.encode())}}
-                       for key, variant in zip(m.IDS, ('FL2VA', 'REF2VA'))]
+
+        self.models = [
+            {
+                'id': key,
+                'subdir': 'video/' + variant,
+                'expected_files': {
+                    'common.bin': metadata(self.data),
+                    'nested/shared.bin': metadata(self.data),
+                    'transformer.bin': metadata(variant.encode()),
+                },
+            }
+            for key, variant in zip(m.IDS, ('FL2VA', 'REF2VA'))
+        ]
         self.a, self.b = [self.base / model['subdir'] for model in self.models]
         for model, folder in zip(self.models, (self.a, self.b)):
             (folder / 'nested').mkdir(parents=True)
@@ -92,6 +102,7 @@ class LocalMergeTests(unittest.TestCase):
 
     def test_missing_counterpart_no_download_or_mkdir(self):
         import shutil
+
         shutil.rmtree(self.b)
         with mock.patch.object(os, 'mkdir', side_effect=AssertionError('no mkdir')):
             self.assertEqual(self.merge()['merged'], 0)
@@ -129,10 +140,12 @@ class LocalMergeTests(unittest.TestCase):
 
     def test_failure_after_install_rolls_back(self):
         real_unlink = m.os.unlink
+
         def fail_cleanup(path, *args, **kwargs):
             if str(path).startswith('.h3-merge-backup-'):
                 raise OSError('injected cleanup failure')
             return real_unlink(path, *args, **kwargs)
+
         with mock.patch.object(m.os, 'unlink', side_effect=fail_cleanup):
             self.assertEqual(self.merge()['skipped'], 2)
         self.assertFalse((self.b / 'common.bin').is_symlink())
@@ -142,6 +155,7 @@ class LocalMergeTests(unittest.TestCase):
     def test_source_changes_during_hash_rejected(self):
         original_read = m.os.read
         changed = False
+
         def read(fd, count):
             nonlocal changed
             block = original_read(fd, count)
@@ -149,6 +163,7 @@ class LocalMergeTests(unittest.TestCase):
                 changed = True
                 (self.a / 'common.bin').write_bytes(b'x' * len(self.data))
             return block
+
         with mock.patch.object(m.os, 'read', side_effect=read):
             self.merge()
         self.assertFalse((self.b / 'common.bin').is_symlink())
@@ -156,6 +171,7 @@ class LocalMergeTests(unittest.TestCase):
     def test_source_replaced_before_install_does_not_remove_target(self):
         original_symlink = m.os.symlink
         changed = False
+
         def symlink(*args, **kwargs):
             nonlocal changed
             value = original_symlink(*args, **kwargs)
@@ -165,6 +181,7 @@ class LocalMergeTests(unittest.TestCase):
                 replacement.write_bytes(b'x' * len(self.data))
                 replacement.replace(self.a / 'common.bin')
             return value
+
         with mock.patch.object(m.os, 'symlink', side_effect=symlink):
             self.merge()
         self.assertFalse((self.b / 'common.bin').is_symlink())
@@ -174,6 +191,7 @@ class LocalMergeTests(unittest.TestCase):
     def test_target_replaced_before_install_keeps_both_versions(self):
         original_symlink = m.os.symlink
         changed = False
+
         def symlink(*args, **kwargs):
             nonlocal changed
             value = original_symlink(*args, **kwargs)
@@ -183,6 +201,7 @@ class LocalMergeTests(unittest.TestCase):
                 replacement.write_bytes(b'concurrent writer')
                 replacement.replace(self.b / 'common.bin')
             return value
+
         with mock.patch.object(m.os, 'symlink', side_effect=symlink), contextlib.redirect_stderr(io.StringIO()):
             self.merge()
         self.assertEqual((self.b / 'common.bin').read_bytes(), b'concurrent writer')

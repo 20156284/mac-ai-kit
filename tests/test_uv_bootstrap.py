@@ -1,4 +1,5 @@
 """uv 下载客户端安装流程的离线模拟测试；不实际安装任何软件。"""
+
 import os
 from pathlib import Path
 import subprocess
@@ -7,13 +8,19 @@ import unittest
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts/bootstrap_download_env.sh'
 
+
 class UvBootstrapTests(unittest.TestCase):
-    def run_mock(self, answer='yes\n', conflict=None, missing_python=False, fail_install=False, preview=False, details=False):
+    def run_mock(
+        self, answer='yes\n', conflict=None, missing_python=False, fail_install=False, preview=False, details=False
+    ):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            bins = root / 'bin'; bins.mkdir()
-            tools = root / 'uv tools'; tools.mkdir()
-            commands = root / 'user bin'; commands.mkdir()
+            bins = root / 'bin'
+            bins.mkdir()
+            tools = root / 'uv tools'
+            tools.mkdir()
+            commands = root / 'user bin'
+            commands.mkdir()
             log = root / 'uv.log'
             if conflict:
                 (commands / conflict).write_text('原有文件，不执行')
@@ -29,8 +36,18 @@ case "$1 $2" in
 esac''',
             }
             for name, body in scripts.items():
-                p = bins / name; p.write_text('#!/bin/sh\n' + body + '\n'); p.chmod(0o755)
-            env = dict(os.environ, PATH=str(bins)+':/usr/bin:/bin', MOCK_LOG=str(log), MOCK_BIN=str(commands), MOCK_TOOLS=str(tools), MOCK_MISSING=str(int(missing_python)), MOCK_FAIL=str(int(fail_install)))
+                p = bins / name
+                p.write_text('#!/bin/sh\n' + body + '\n')
+                p.chmod(0o755)
+            env = dict(
+                os.environ,
+                PATH=str(bins) + ':/usr/bin:/bin',
+                MOCK_LOG=str(log),
+                MOCK_BIN=str(commands),
+                MOCK_TOOLS=str(tools),
+                MOCK_MISSING=str(int(missing_python)),
+                MOCK_FAIL=str(int(fail_install)),
+            )
             args = ['bash', str(SCRIPT)] + (['--dry-run'] if preview else []) + (['--details'] if details else [])
             result = subprocess.run(args, input=answer, text=True, capture_output=True, env=env)
             calls = log.read_text() if log.exists() else ''
@@ -46,7 +63,10 @@ esac''',
     def test_explicit_confirmation_installs_isolated_pinned_tool(self):
         p, calls, files = self.run_mock()
         self.assertEqual(p.returncode, 0, p.stderr)
-        self.assertIn('tool install --python /usr/bin/python3 --no-python-downloads --default-index https://pypi.org/simple modelscope-hub==0.4.0', calls)
+        self.assertIn(
+            'tool install --python /usr/bin/python3 --no-python-downloads --default-index https://pypi.org/simple modelscope-hub==0.4.0',
+            calls,
+        )
         self.assertEqual(files, ['ms-hub'])
         self.assertNotIn('update-shell', calls)
         self.assertNotIn('--force', calls)
@@ -117,6 +137,7 @@ esac''',
         self.assertIn('安装模型下载工具', p.stdout)
         p = subprocess.run(['bash', str(SCRIPT), '--unknown'], capture_output=True)
         self.assertEqual(p.returncode, 2)
+
 
 if __name__ == '__main__':
     unittest.main()

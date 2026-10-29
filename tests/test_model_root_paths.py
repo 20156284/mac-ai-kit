@@ -1,4 +1,5 @@
 """模型根每级路径空白防护；全部使用本地微型临时文件。"""
+
 import os
 from pathlib import Path
 import subprocess
@@ -13,8 +14,7 @@ from path_validation import validate_model_root
 
 class ModelRootPathTests(unittest.TestCase):
     def test_reject_each_component_and_offer_explicit_suggestion(self):
-        for value in ('/Volumes/ Samsung1TB/AI/models',
-                      '/tmp/a\t/models', '/tmp/\u3000a/models', '/tmp/models /'):
+        for value in ('/Volumes/ Samsung1TB/AI/models', '/tmp/a\t/models', '/tmp/\u3000a/models', '/tmp/models /'):
             with self.subTest(value=value), self.assertRaises(ValueError) as caught:
                 validate_model_root(value)
             self.assertIn(repr(value), str(caught.exception))
@@ -25,9 +25,19 @@ class ModelRootPathTests(unittest.TestCase):
         for whitespace in (' ', '\t', '\u00a0', '\u3000', '\n', '\r', '\u2009', ' \t\u00a0'):
             value = whitespace + '/tmp/My SSD/models' + whitespace
             self.assertEqual(validate_model_root(value), Path('/tmp/My SSD/models'))
-            result = subprocess.run(['bash', '-c', '. "$1"; validate_model_root_shell "$2" && printf "%s" "$VALIDATED_MODEL_ROOT"',
-                                     'bash', str(ROOT / 'scripts/path_validation.sh'), value],
-                                    capture_output=True, text=True, env={**os.environ, 'LC_ALL': 'C'})
+            result = subprocess.run(
+                [
+                    'bash',
+                    '-c',
+                    '. "$1"; validate_model_root_shell "$2" && printf "%s" "$VALIDATED_MODEL_ROOT"',
+                    'bash',
+                    str(ROOT / 'scripts/path_validation.sh'),
+                    value,
+                ],
+                capture_output=True,
+                text=True,
+                env={**os.environ, 'LC_ALL': 'C'},
+            )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout, '/tmp/My SSD/models')
 
@@ -35,8 +45,17 @@ class ModelRootPathTests(unittest.TestCase):
         for value in ('', ' \t\u00a0', '/', ' / \u00a0', '//', '/./'):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 validate_model_root(value)
-            result = subprocess.run(['bash', '-c', '. "$1"; validate_model_root_shell "$2"',
-                                     'bash', str(ROOT / 'scripts/path_validation.sh'), value], capture_output=True)
+            result = subprocess.run(
+                [
+                    'bash',
+                    '-c',
+                    '. "$1"; validate_model_root_shell "$2"',
+                    'bash',
+                    str(ROOT / 'scripts/path_validation.sh'),
+                    value,
+                ],
+                capture_output=True,
+            )
             self.assertNotEqual(result.returncode, 0, value)
 
     def test_literal_backslash_is_not_unescaped(self):
@@ -56,12 +75,28 @@ class ModelRootPathTests(unittest.TestCase):
 
     def test_shell_matches_python_on_whitespace(self):
         # 默认 locale 下核对 Unicode 与 ASCII；不运行安装或下载脚本。
-        for value, valid in [('/tmp/中文目录/models', True), ('/tmp/My SSD/models', True), ('/tmp/models ', True),
-                             ('/tmp/a /models', False), ('/tmp/\ta/models', False),
-                             ('/tmp/\u3000a/models', False), ('/tmp/models\u00a0', True)]:
-            result = subprocess.run(['bash', '-c', '. "$1"; validate_model_root_shell "$2"',
-                                     'bash', str(ROOT / 'scripts/path_validation.sh'), value],
-                                    text=True, capture_output=True, env={**os.environ, 'LC_ALL': 'C'})
+        for value, valid in [
+            ('/tmp/中文目录/models', True),
+            ('/tmp/My SSD/models', True),
+            ('/tmp/models ', True),
+            ('/tmp/a /models', False),
+            ('/tmp/\ta/models', False),
+            ('/tmp/\u3000a/models', False),
+            ('/tmp/models\u00a0', True),
+        ]:
+            result = subprocess.run(
+                [
+                    'bash',
+                    '-c',
+                    '. "$1"; validate_model_root_shell "$2"',
+                    'bash',
+                    str(ROOT / 'scripts/path_validation.sh'),
+                    value,
+                ],
+                text=True,
+                capture_output=True,
+                env={**os.environ, 'LC_ALL': 'C'},
+            )
             self.assertEqual(result.returncode == 0, valid, (value, result.stderr))
             if not valid:
                 self.assertIn('显式重新选择', result.stderr)
@@ -71,16 +106,21 @@ class ModelRootPathTests(unittest.TestCase):
         import io
         import json
         import download_models
+
         for flag in ('--models-dir', '--dest'):
             with tempfile.TemporaryDirectory() as folder:
                 base = Path(folder) / 'My models'
                 base.mkdir()
                 output = io.StringIO()
                 with contextlib.redirect_stdout(output):
-                    self.assertEqual(download_models.main([flag, ' \t' + str(base) + '\u00a0',
-                                                          '--repo', 'owner/model', '--dry-run', '--details']), 0)
+                    self.assertEqual(
+                        download_models.main(
+                            [flag, ' \t' + str(base) + '\u00a0', '--repo', 'owner/model', '--dry-run', '--details']
+                        ),
+                        0,
+                    )
                 text = output.getvalue()
-                payload = json.loads(text[text.index('{'):])
+                payload = json.loads(text[text.index('{') :])
                 self.assertEqual(payload['models_dir'], str(base))
                 self.assertFalse((base / 'models').exists())
                 self.assertFalse(Path(str(base) + '\u00a0').exists())
@@ -88,8 +128,12 @@ class ModelRootPathTests(unittest.TestCase):
     def test_empty_cli_all_python_entrypoints_fail(self):
         for script in ('download_models.py', 'model_inventory.py', 'merge_h3_models.py', 'llama_benchmark.py'):
             for value in ('', ' \t\u00a0'):
-                result = subprocess.run([sys.executable, str(ROOT / 'scripts' / script), '--models-dir', value],
-                                        capture_output=True, text=True, stdin=subprocess.DEVNULL)
+                result = subprocess.run(
+                    [sys.executable, str(ROOT / 'scripts' / script), '--models-dir', value],
+                    capture_output=True,
+                    text=True,
+                    stdin=subprocess.DEVNULL,
+                )
                 self.assertNotEqual(result.returncode, 0, (script, value))
                 self.assertIn('模型目录无效', result.stderr)
 

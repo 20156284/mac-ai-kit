@@ -1,4 +1,5 @@
 """Benchmark 启动流程不重复确认；仅模拟调用。"""
+
 import contextlib
 import io
 from pathlib import Path
@@ -16,14 +17,16 @@ import mlx_benchmark as mlx
 class PromptFlowTests(unittest.TestCase):
     def test_llama_starts_after_parameters_without_yes(self):
         output = io.StringIO()
-        with tempfile.TemporaryDirectory() as folder, \
-             patch.object(llama.sys, 'argv', ['benchmark', '--base-url', llama.DEFAULT_URL, '--output', folder]), \
-             patch.object(llama.shutil, 'which', return_value='/bin/uvx'), \
-             patch.object(llama, 'discover', return_value=[{'id': 'test-model'}]), \
-             patch.object(llama, 'resolve_tokenizer', return_value={'kind': 'local', 'value': '/mock/tokenizer.json'}), \
-             patch('builtins.input', side_effect=['']) as prompt, \
-             patch.object(llama, 'run', return_value=0) as run, \
-             contextlib.redirect_stdout(output):
+        with (
+            tempfile.TemporaryDirectory() as folder,
+            patch.object(llama.sys, 'argv', ['benchmark', '--base-url', llama.DEFAULT_URL, '--output', folder]),
+            patch.object(llama.shutil, 'which', return_value='/bin/uvx'),
+            patch.object(llama, 'discover', return_value=[{'id': 'test-model'}]),
+            patch.object(llama, 'resolve_tokenizer', return_value={'kind': 'local', 'value': '/mock/tokenizer.json'}),
+            patch('builtins.input', side_effect=['']) as prompt,
+            patch.object(llama, 'run', return_value=0) as run,
+            contextlib.redirect_stdout(output),
+        ):
             self.assertEqual(llama.main(), 0)
             self.assertEqual(prompt.call_count, 1)
             self.assertIn('最大背景深度', prompt.call_args.args[0])
@@ -35,11 +38,13 @@ class PromptFlowTests(unittest.TestCase):
 
     def test_mlx_has_no_redundant_start_warning(self):
         output = io.StringIO()
-        with tempfile.TemporaryDirectory() as folder, \
-             patch.object(mlx, 'choose_model', return_value='mock'), \
-             patch.object(mlx, 'run_benchmark', return_value={'results': []}) as run, \
-             patch('builtins.input', side_effect=AssertionError('不应追加确认')), \
-             contextlib.redirect_stdout(output):
+        with (
+            tempfile.TemporaryDirectory() as folder,
+            patch.object(mlx, 'choose_model', return_value='mock'),
+            patch.object(mlx, 'run_benchmark', return_value={'results': []}) as run,
+            patch('builtins.input', side_effect=AssertionError('不应追加确认')),
+            contextlib.redirect_stdout(output),
+        ):
             self.assertEqual(mlx.main(['--base-url', 'http://localhost:11234/v1', '--output', folder]), 0)
             run.assert_called_once()
         self.assertNotIn('HTTP 请求可能触发', output.getvalue())

@@ -1,4 +1,5 @@
 """离线安装器审查测试；不执行真实安装器或下载二进制程序。"""
+
 import io
 import os
 from pathlib import Path
@@ -11,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CAP = ROOT / 'scripts/setup_ai_capabilities.sh'
 ENV = ROOT / 'scripts/setup_mac_environment.sh'
 
+
 class InstallerTests(unittest.TestCase):
     def test_bash_syntax(self):
         for script in (CAP, ENV):
@@ -19,16 +21,21 @@ class InstallerTests(unittest.TestCase):
     def test_preview_offline_no_writes(self):
         for script in (CAP, ENV):
             with tempfile.TemporaryDirectory() as td:
-                base = Path(td); home = base / "home with spaces and 'quote"; home.mkdir()
-                mock = base / 'bin'; mock.mkdir()
+                base = Path(td)
+                home = base / "home with spaces and 'quote"
+                home.mkdir()
+                mock = base / 'bin'
+                mock.mkdir()
                 for tool in ('curl', 'brew', 'macmon', 'uv', 'fnm', 'node', 'npm', 'docker', 'ffmpeg'):
                     f = mock / tool
-                    f.write_text('#!/bin/sh\n[ "$1" = --version ] || [ "$1" = -version ] || exit 99\nprintf "mock-version\\n"\n')
+                    f.write_text(
+                        '#!/bin/sh\n[ "$1" = --version ] || [ "$1" = -version ] || exit 99\nprintf "mock-version\\n"\n'
+                    )
                     f.chmod(0o755)
-                env = dict(os.environ, HOME=str(home), PATH=str(mock)+':/usr/bin:/bin', NVM_DIR=str(home/'nvm'))
+                env = dict(os.environ, HOME=str(home), PATH=str(mock) + ':/usr/bin:/bin', NVM_DIR=str(home / 'nvm'))
                 before = list(home.rglob('*'))
                 p = subprocess.run(['bash', str(script), '--dry-run'], env=env, capture_output=True, text=True)
-                self.assertEqual(p.returncode, 0, p.stdout+p.stderr)
+                self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
                 self.assertEqual(list(home.rglob('*')), before)
 
     def test_invalid_argument(self):
@@ -57,15 +64,25 @@ class InstallerTests(unittest.TestCase):
         # 仅使用本地构造数据执行嵌入式解压代码。
         text = CAP.read_text()
         start = text.index('import os, pathlib, stat, sys, tarfile, zipfile')
-        code = text[start:text.index('\nPY', start)]
+        code = text[start : text.index('\nPY', start)]
         with tempfile.TemporaryDirectory() as td:
-            base = Path(td); stage = base/'stage'; stage.mkdir()
-            archive = base/'fixture.tar.gz'
+            base = Path(td)
+            stage = base / 'stage'
+            stage.mkdir()
+            archive = base / 'fixture.tar.gz'
             with tarfile.open(archive, 'w:gz') as t:
-                link = tarfile.TarInfo('a'); link.type=tarfile.SYMTYPE; link.linkname='.'; t.addfile(link)
-                data=b'outside'; f=tarfile.TarInfo('a/../escape'); f.size=len(data); t.addfile(f,io.BytesIO(data))
-            p = subprocess.run(['python3','-c',code,str(archive),str(stage)],capture_output=True)
-            self.assertFalse((base/'escape').exists(), '解压写入了暂存目录之外')
+                link = tarfile.TarInfo('a')
+                link.type = tarfile.SYMTYPE
+                link.linkname = '.'
+                t.addfile(link)
+                data = b'outside'
+                f = tarfile.TarInfo('a/../escape')
+                f.size = len(data)
+                t.addfile(f, io.BytesIO(data))
+            p = subprocess.run(['python3', '-c', code, str(archive), str(stage)], capture_output=True)
+            self.assertFalse((base / 'escape').exists(), '解压写入了暂存目录之外')
             self.assertNotEqual(p.returncode, 0, '错误地接受了不安全归档')
 
-if __name__ == '__main__': unittest.main()
+
+if __name__ == '__main__':
+    unittest.main()

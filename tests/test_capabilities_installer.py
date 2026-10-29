@@ -1,4 +1,5 @@
 """仅执行离线契约测试；不执行下载的代码或安装软件。"""
+
 import os
 from pathlib import Path
 import subprocess
@@ -9,13 +10,13 @@ import unittest
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts' / 'setup_ai_capabilities.sh'
 
+
 class CapabilityInstallerTests(unittest.TestCase):
     def run_script(self, *args, home=None):
         env = os.environ.copy()
         if home is not None:
             env['HOME'] = str(home)
-        return subprocess.run(['bash', str(SCRIPT), *args], env=env,
-                              text=True, capture_output=True)
+        return subprocess.run(['bash', str(SCRIPT), *args], env=env, text=True, capture_output=True)
 
     def test_archive_rejects_symlink_dotdot_traversal(self):
         # 仅用本地构造的归档测试本工具包的解压片段。
@@ -35,8 +36,9 @@ class CapabilityInstallerTests(unittest.TestCase):
                 payload = tarfile.TarInfo('a/../escape')
                 payload.size = 4
                 tf.addfile(payload, io.BytesIO(b'evil'))
-            result = subprocess.run(['python3', '-', str(archive), str(stage)],
-                                    input=extractor, text=True, capture_output=True)
+            result = subprocess.run(
+                ['python3', '-', str(archive), str(stage)], input=extractor, text=True, capture_output=True
+            )
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse((root / 'escape').exists())
             self.assertEqual(list(stage.iterdir()), [])
@@ -59,7 +61,13 @@ class CapabilityInstallerTests(unittest.TestCase):
 
     def test_cli_plumbing_removed(self):
         source = SCRIPT.read_text()
-        for obsolete in ('existing_mlx_cli', 'reuse_bundled_cli', 'DYLD_LIBRARY_PATH', 'MLX_METAL_PATH', '$ROOT/bin/mlx-serve'):
+        for obsolete in (
+            'existing_mlx_cli',
+            'reuse_bundled_cli',
+            'DYLD_LIBRARY_PATH',
+            'MLX_METAL_PATH',
+            '$ROOT/bin/mlx-serve',
+        ):
             self.assertNotIn(obsolete, source)
 
     def test_removed_mode_option_is_rejected(self):
@@ -81,8 +89,13 @@ class CapabilityInstallerTests(unittest.TestCase):
             self.assertFalse(path.exists())
 
     def test_gui_model_arguments_rejected_when_invalid(self):
-        for args in [('--mlx-mode', 'unknown'), ('--models-dir', '/'),
-                     ('--models-dir', 'relative'), ('--models-dir',), ('--yes',)]:
+        for args in [
+            ('--mlx-mode', 'unknown'),
+            ('--models-dir', '/'),
+            ('--models-dir', 'relative'),
+            ('--models-dir',),
+            ('--yes',),
+        ]:
             with self.subTest(args=args):
                 self.assertEqual(self.run_script(*args).returncode, 2)
 
@@ -132,6 +145,7 @@ class CapabilityInstallerTests(unittest.TestCase):
         self.assertIn('--skip-computer-use', r.stdout)
         self.assertIn('Node/工具链', r.stdout)
         self.assertIn('shell PATH 配置文件', r.stdout)
+
 
 if __name__ == '__main__':
     unittest.main()

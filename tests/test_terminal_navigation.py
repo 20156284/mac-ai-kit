@@ -1,4 +1,5 @@
 """用真实伪终端验证菜单按键、取消和终端状态，无安装、下载或远程操作。"""
+
 import os
 import errno
 import fcntl
@@ -25,19 +26,29 @@ class Terminal:
         fcntl.ioctl(self.slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, columns, 0, 0))
         self.before = termios.tcgetattr(self.slave)
         self.home = tempfile.TemporaryDirectory()
-        environment = dict(os.environ, TERM='xterm-256color', HOME=self.home.name, XDG_CONFIG_HOME=str(Path(self.home.name) / '.config'))
+        environment = dict(
+            os.environ,
+            TERM='xterm-256color',
+            HOME=self.home.name,
+            XDG_CONFIG_HOME=str(Path(self.home.name) / '.config'),
+        )
         environment.pop('NO_COLOR', None)
         environment.update(env)
-        self.process = subprocess.Popen(['bash', *bash_options, str(ROOT / 'start.sh')],
-            stdin=self.slave, stdout=self.slave, stderr=self.slave,
-            env=environment, start_new_session=True)
+        self.process = subprocess.Popen(
+            ['bash', *bash_options, str(ROOT / 'start.sh')],
+            stdin=self.slave,
+            stdout=self.slave,
+            stderr=self.slave,
+            env=environment,
+            start_new_session=True,
+        )
         self.output = b''
 
     def until(self, text, start=0):
         target = text.encode()
         deadline = time.monotonic() + 5
         while target not in self.output[start:] and time.monotonic() < deadline:
-            if select.select([self.master], [], [], .1)[0]:
+            if select.select([self.master], [], [], 0.1)[0]:
                 try:
                     self.output += os.read(self.master, 65536)
                 except OSError:
@@ -61,7 +72,7 @@ class Terminal:
         # macOS 伪终端输出缓冲较小；等待退出时持续读取，避免子进程写满后阻塞。
         deadline = time.monotonic() + timeout
         while self.process.poll() is None and time.monotonic() < deadline:
-            if select.select([self.master], [], [], .1)[0]:
+            if select.select([self.master], [], [], 0.1)[0]:
                 try:
                     chunk = os.read(self.master, 65536)
                     if chunk:
@@ -144,7 +155,16 @@ class NavigationTests(unittest.TestCase):
                 mark = t.send(b'6\r')
                 t.menu('服务管理', '返回', mark)
                 frame = self.assert_screen_fits(t.output[mark:].decode(), columns, 24)
-                for label in ('启动全部', '仅启动音频', '仅启动制图', '停止全部', '查看状态', '查看日志', '可选 llama-swap'):
+                for label in (
+                    '启动全部',
+                    '仅启动音频',
+                    '仅启动制图',
+                    '停止全部',
+                    '查看状态',
+                    '查看日志',
+                    '可选 llama-swap',
+                    '切换访问范围',
+                ):
                     self.assertIn(label, frame)
                 mark = t.send(b'\x1b[D')
                 t.menu('从这里开始', '退出', mark)
@@ -198,7 +218,7 @@ class NavigationTests(unittest.TestCase):
         mark = t.send(b'1\r')
         t.menu('安装推理与生成引擎', '返回', mark)
         self.assertNotIn('仅安装 MLX 命令行'.encode(), t.output[mark:])
-        time.sleep(.1)
+        time.sleep(0.1)
         self.assertNotIn('基础环境安装'.encode(), t.output[mark:])
         mark = t.send(b'0\r')
         t.menu('从这里开始', '退出', mark)
@@ -232,8 +252,14 @@ class NavigationTests(unittest.TestCase):
         self.assertEqual(list(Path(t.home.name).iterdir()), [])
 
     def test_double_escape_and_alt_keys_do_not_leak_actions(self):
-        for keys in (b'\x1b\x1b', b'\x1b\x1bq', b'\x1b\x1b4',
-                     b'\x1b\x1b[1;5A', b'\x1b\x1bO1;5D', b'\x1b[' + b'1;' * 80 + b'4q'):
+        for keys in (
+            b'\x1b\x1b',
+            b'\x1b\x1bq',
+            b'\x1b\x1b4',
+            b'\x1b\x1b[1;5A',
+            b'\x1b\x1bO1;5D',
+            b'\x1b[' + b'1;' * 80 + b'4q',
+        ):
             with self.subTest(keys=keys):
                 t = self.terminal()
                 t.until('0/q 退出')
@@ -256,12 +282,11 @@ class NavigationTests(unittest.TestCase):
                     mark = t.send(b'1\r')
                     t.menu('安装推理与生成引擎', '返回', mark)
                     mark = len(t.output)
-                    for sequence in (b'\x1b' + prefix + b'B',
-                                     b'\x1b' + prefix + b'1;5A'):
+                    for sequence in (b'\x1b' + prefix + b'B', b'\x1b' + prefix + b'1;5A'):
                         if delayed:
                             for byte in sequence:
                                 t.send(bytes([byte]))
-                                time.sleep(.04)
+                                time.sleep(0.04)
                         else:
                             t.send(sequence)
                     t.until('0/q 返回', mark)
@@ -277,8 +302,7 @@ class NavigationTests(unittest.TestCase):
 
     def test_locale_collation_does_not_swallow_arrow_enter(self):
         locales = subprocess.check_output(['locale', '-a'], text=True).splitlines()
-        candidates = [name for name in locales
-                      if name.lower().replace('-', '') in ('en_us.utf8', 'zh_cn.utf8')]
+        candidates = [name for name in locales if name.lower().replace('-', '') in ('en_us.utf8', 'zh_cn.utf8')]
         if not candidates:
             self.skipTest('排序回归需要非 C 的 UTF-8 语言环境')
         version = subprocess.check_output(['bash', '-c', 'echo "${BASH_VERSINFO[0]}"'], text=True)
@@ -321,7 +345,7 @@ class NavigationTests(unittest.TestCase):
         t = self.terminal()
         t.until('0/q 退出')
         # Bash read 已进入无回显单键读取时发送中断。
-        time.sleep(.1)
+        time.sleep(0.1)
         os.kill(t.process.pid, signal.SIGINT)
         self.assertEqual(t.wait(timeout=5), 130)
         t.assert_restored(self)
@@ -349,17 +373,17 @@ class NavigationTests(unittest.TestCase):
     def assert_screen_fits(self, raw, columns, rows):
         frame = raw.split('\x1b[2J\x1b[H')[-1]
         plain = re.sub(r'\x1b\[[0-9;]*[A-Za-z]', '', frame).replace('\r', '')
-        widths = [sum(0 if unicodedata.combining(c) else
-                      2 if unicodedata.east_asian_width(c) in 'WF' else 1
-                      for c in line) for line in plain.splitlines()]
+        widths = [
+            sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in 'WF' else 1 for c in line)
+            for line in plain.splitlines()
+        ]
         self.assertLessEqual(max(widths), columns, plain)
         # Leave a row for the cursor: writing a newline on the last row scrolls.
         self.assertLess(len(plain.splitlines()), rows, plain)
         return plain
 
     def test_responsive_branding_and_screen_fit(self):
-        sizes = [(columns, rows) for columns in (32, 40, 80, 100, 120)
-                 for rows in (24, 30)] + [(80, 18)]
+        sizes = [(columns, rows) for columns in (32, 40, 80, 100, 120) for rows in (24, 30)] + [(80, 18)]
         descriptions = (
             '准备基础环境，选择推理与生成引擎',
             '浏览、下载模型，设置存储目录',
@@ -372,8 +396,7 @@ class NavigationTests(unittest.TestCase):
                 t.until('0/q 退出')
                 raw = t.output.decode()
                 plain = self.assert_screen_fits(raw, columns, rows)
-                logo_rows = 5 if columns >= 100 and rows >= 28 else (
-                    3 if columns >= 64 and rows >= 22 else 0)
+                logo_rows = 5 if columns >= 100 and rows >= 28 else (3 if columns >= 64 and rows >= 22 else 0)
                 lines = plain.splitlines()
                 self.assertEqual(sum('█' in line for line in lines), logo_rows)
                 # Product and subtitle must be distinct lines, separated from
@@ -386,15 +409,13 @@ class NavigationTests(unittest.TestCase):
                 self.assertNotIn('本地智能工作站', plain)
                 self.assertIn('\x1b[1;97;44m', raw)
                 for code in re.findall(r'\x1b\[([0-9;]*)m', raw):
-                    self.assertFalse(set(code.split(';')) &
-                                     {'32', '35', '42', '45', '92', '95', '102', '105'})
+                    self.assertFalse(set(code.split(';')) & {'32', '35', '42', '45', '92', '95', '102', '105'})
                 for index, description in enumerate(descriptions, 1):
                     mark = t.send(str(index).encode())
                     t.until('0/q 退出', mark)
                     frame = self.assert_screen_fits(t.output[mark:].decode(), columns, rows)
                     # Wrapping must never truncate focused descriptions.
-                    self.assertIn(description.replace(' ', ''),
-                                  ''.join(frame.split()))
+                    self.assertIn(description.replace(' ', ''), ''.join(frame.split()))
                     self.assertEqual(len(re.findall(r'^ *[> ]? *[1-4]  ', frame, re.M)), 4)
                     self.assertIn('h 帮助', frame)
                     self.assertIn('数字定位', frame)
@@ -410,21 +431,37 @@ class NavigationTests(unittest.TestCase):
                 t.assert_restored(self)
 
     def test_non_tty_plain_menu_and_cli_compatibility(self):
-        result = subprocess.run(['bash', str(ROOT / 'start.sh')],
-            input='2\n0\n0\n', text=True, capture_output=True, timeout=5,
-            env=dict(os.environ, TERM='xterm'))
+        result = subprocess.run(
+            ['bash', str(ROOT / 'start.sh')],
+            input='2\n0\n0\n',
+            text=True,
+            capture_output=True,
+            timeout=5,
+            env=dict(os.environ, TERM='xterm'),
+        )
         self.assertEqual(result.returncode, 0)
         self.assertNotIn('\x1b', result.stdout)
         self.assertIn('模型管理', result.stdout)
         self.assertIn('6  服务管理', result.stdout)
-        for description in ('准备基础环境，选择推理与生成引擎',
-                            '浏览、下载模型，设置存储目录',
-                            '在你指定的仓库目录中配置脚本和服务'):
+        for description in (
+            '准备基础环境，选择推理与生成引擎',
+            '浏览、下载模型，设置存储目录',
+            '在你指定的仓库目录中配置脚本和服务',
+        ):
             self.assertIn(description, result.stdout)
-        result = subprocess.run(['bash', str(ROOT / 'start.sh'), '--help'],
-            text=True, capture_output=True, timeout=5)
+        result = subprocess.run(['bash', str(ROOT / 'start.sh'), '--help'], text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0)
-        for command in ('env', 'capabilities', 'download-client', 'models', 'download', 'check', 'api', 'merge-h3', 'remote'):
+        for command in (
+            'env',
+            'capabilities',
+            'download-client',
+            'models',
+            'download',
+            'check',
+            'api',
+            'merge-h3',
+            'remote',
+        ):
             self.assertIn(command, result.stdout)
 
 

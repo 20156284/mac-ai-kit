@@ -31,3 +31,23 @@ jobs:
       - name: 运行全部自有测试
         shell: bash
         run: bash scripts/test.sh --remote
+
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: 检查 Python 格式
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: '0.17.3'
+          args: format --check
+      - name: 检查 Bash 格式
+        shell: bash
+        run: |
+          curl --fail --location --proto '=https' -o "$RUNNER_TEMP/shfmt" https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_linux_amd64
+          echo "76e77641faa025814b77f153b29796b8e6fa2fca03e0c76a691608b86c7ea7bf  $RUNNER_TEMP/shfmt" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/shfmt"
+          "$RUNNER_TEMP/shfmt" -d start.sh scripts/*.sh remote/*.sh remote/src/*.sh

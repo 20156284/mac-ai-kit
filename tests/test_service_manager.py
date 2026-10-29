@@ -33,16 +33,21 @@ class ServiceManagerTests(unittest.TestCase):
             path.write_text('#!/bin/sh\nexit 99\n')
             path.chmod(0o755)
         self.manager = sm.Manager(self.root, self.models, self.home)
-        self.loaded = patch.object(sm.Manager, 'loaded', return_value=dict(loaded=False, owned=False, pid=None, detail='未加载'))
+        self.loaded = patch.object(
+            sm.Manager, 'loaded', return_value=dict(loaded=False, owned=False, pid=None, detail='未加载')
+        )
         self.loaded.start()
         self.addCleanup(self.loaded.stop)
 
-    def configure(self):
+    def configure(self, **kwargs):
         with contextlib.redirect_stdout(io.StringIO()):
-            self.manager.configure(str(self.model))
+            self.manager.configure(str(self.model), **kwargs)
 
     def test_configure_does_not_launch_or_load(self):
-        with patch.object(sm.subprocess, 'run', side_effect=AssertionError('no execution')), patch.object(sm.os, 'execv', side_effect=AssertionError('no execution')):
+        with (
+            patch.object(sm.subprocess, 'run', side_effect=AssertionError('no execution')),
+            patch.object(sm.os, 'execv', side_effect=AssertionError('no execution')),
+        ):
             self.configure()
         cfg = json.loads(self.manager.config.read_text())
         self.assertEqual({'healthCheckTimeout', 'globalTTL', 'models'}, set(cfg))
@@ -116,7 +121,11 @@ class ServiceManagerTests(unittest.TestCase):
 
     def test_login_enable_does_not_bootstrap_and_disable_does_not_stop(self):
         self.configure()
-        with patch.object(sm.sys, 'platform', 'darwin'), patch.object(self.manager, 'ctl', return_value=Mock(returncode=0)) as ctl, contextlib.redirect_stdout(io.StringIO()):
+        with (
+            patch.object(sm.sys, 'platform', 'darwin'),
+            patch.object(self.manager, 'ctl', return_value=Mock(returncode=0)) as ctl,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             self.manager.enable_login()
             ctl.assert_called_once_with('enable', self.manager.target)
             self.assertTrue(self.manager.login.exists())
@@ -125,19 +134,35 @@ class ServiceManagerTests(unittest.TestCase):
             self.assertEqual(1, ctl.call_count)
 
     def test_stop_refuses_foreign_service(self):
-        with patch.object(sm.sys, 'platform', 'darwin'), patch.object(self.manager, 'loaded', return_value=dict(loaded=True, owned=False, pid=123, detail='foreign')), patch.object(self.manager, 'ctl') as ctl:
+        with (
+            patch.object(sm.sys, 'platform', 'darwin'),
+            patch.object(
+                self.manager, 'loaded', return_value=dict(loaded=True, owned=False, pid=123, detail='foreign')
+            ),
+            patch.object(self.manager, 'ctl') as ctl,
+        ):
             with self.assertRaises(sm.ServiceError):
                 self.manager.stop()
             ctl.assert_not_called()
 
     def test_stop_works_with_missing_model_directory(self):
-        with patch.object(sm.sys, 'platform', 'darwin'), patch.object(self.manager, 'paths_ready', side_effect=AssertionError('must not need mounted models')), patch.object(self.manager, 'loaded', return_value=dict(loaded=True, owned=True, pid=123, detail='owned')), patch.object(self.manager, 'ctl', return_value=Mock(returncode=0)) as ctl, contextlib.redirect_stdout(io.StringIO()):
+        with (
+            patch.object(sm.sys, 'platform', 'darwin'),
+            patch.object(self.manager, 'paths_ready', side_effect=AssertionError('must not need mounted models')),
+            patch.object(self.manager, 'loaded', return_value=dict(loaded=True, owned=True, pid=123, detail='owned')),
+            patch.object(self.manager, 'ctl', return_value=Mock(returncode=0)) as ctl,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             self.manager.stop()
             ctl.assert_called_once_with('bootout', self.manager.target)
 
     def test_busy_port_prevents_bootstrap(self):
         self.configure()
-        with patch.object(sm.sys, 'platform', 'darwin'), patch.object(sm, 'available_port', side_effect=sm.ServiceError('busy')), patch.object(self.manager, 'ctl') as ctl:
+        with (
+            patch.object(sm.sys, 'platform', 'darwin'),
+            patch.object(sm, 'available_port', side_effect=sm.ServiceError('busy')),
+            patch.object(self.manager, 'ctl') as ctl,
+        ):
             with self.assertRaises(sm.ServiceError):
                 self.manager.start()
             ctl.assert_not_called()
@@ -145,7 +170,14 @@ class ServiceManagerTests(unittest.TestCase):
     def test_start_only_owned_label_and_checks_health(self):
         self.configure()
         states = [dict(loaded=False, owned=False, pid=None), dict(loaded=True, owned=True, pid=321)]
-        with patch.object(sm.sys, 'platform', 'darwin'), patch.object(sm, 'available_port'), patch.object(self.manager, 'loaded', side_effect=states), patch.object(self.manager, 'health', return_value=True), patch.object(self.manager, 'ctl', return_value=Mock(returncode=0)) as ctl, contextlib.redirect_stdout(io.StringIO()):
+        with (
+            patch.object(sm.sys, 'platform', 'darwin'),
+            patch.object(sm, 'available_port'),
+            patch.object(self.manager, 'loaded', side_effect=states),
+            patch.object(self.manager, 'health', return_value=True),
+            patch.object(self.manager, 'ctl', return_value=Mock(returncode=0)) as ctl,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             self.manager.start()
         self.assertEqual(('enable', self.manager.target), ctl.call_args_list[0].args)
         self.assertEqual(('bootstrap', f'gui/{os.getuid()}', str(self.manager.runtime)), ctl.call_args_list[1].args)
@@ -153,13 +185,22 @@ class ServiceManagerTests(unittest.TestCase):
 
     def test_run_only_proxy_with_verified_flags(self):
         self.configure()
-        with patch.object(sm.sys, 'platform', 'darwin'), patch.object(sm, 'available_port'), patch.object(sm.os, 'execv') as execute:
+        with (
+            patch.object(sm.sys, 'platform', 'darwin'),
+            patch.object(sm, 'available_port'),
+            patch.object(sm.os, 'execv') as execute,
+        ):
             self.manager.run()
         args = execute.call_args.args[1]
-        self.assertEqual([str(self.root / 'bin/llama-swap'), '-config', str(self.manager.config), '-listen', '0.0.0.0:8080'], args)
+        self.assertEqual(
+            [str(self.root / 'bin/llama-swap'), '-config', str(self.manager.config), '-listen', '127.0.0.1:8080'], args
+        )
 
     def test_status_without_config_readonly_no_network(self):
-        with patch.object(self.manager, 'health', side_effect=AssertionError('no unrelated service probes')), contextlib.redirect_stdout(io.StringIO()) as out:
+        with (
+            patch.object(self.manager, 'health', side_effect=AssertionError('no unrelated service probes')),
+            contextlib.redirect_stdout(io.StringIO()) as out,
+        ):
             self.manager.status()
         self.assertIn('未安装' if not sm.executable(self.root, 'llama-swap') else '可执行入口', out.getvalue())
         self.assertFalse(self.manager.base.exists())
@@ -177,15 +218,27 @@ class ServiceManagerTests(unittest.TestCase):
 
     def test_noninteractive_mutation_requires_yes(self):
         with patch.object(sm.sys.stdin, 'isatty', return_value=False), contextlib.redirect_stdout(io.StringIO()):
-            code = sm.main(['--root', str(self.root), '--models-dir', str(self.models), 'configure', '--model', str(self.model)])
+            code = sm.main(
+                ['--root', str(self.root), '--models-dir', str(self.models), 'configure', '--model', str(self.model)]
+            )
         self.assertEqual(2, code)
         self.assertFalse(self.manager.config.exists())
 
     def legacy_mlx(self):
         self.manager.base.mkdir(parents=True)
-        self.manager.settings.write_text(json.dumps(dict(models_dir=str(self.models),
-            model=str(self.models / 'llm/Qwen3.8-27B-bf16'), server=str(self.root / 'bin/mlx-serve'),
-            port=8080, backend_port=11234, backend='mlx', proxy_bind='127.0.0.1')))
+        self.manager.settings.write_text(
+            json.dumps(
+                dict(
+                    models_dir=str(self.models),
+                    model=str(self.models / 'llm/Qwen3.8-27B-bf16'),
+                    server=str(self.root / 'bin/mlx-serve'),
+                    port=8080,
+                    backend_port=11234,
+                    backend='mlx',
+                    proxy_bind='127.0.0.1',
+                )
+            )
+        )
         self.manager.config.write_text('{"models":{"local-mlx":{"cmd":"old command"}}}')
         return self.manager.settings.read_bytes(), self.manager.config.read_bytes()
 
@@ -198,10 +251,18 @@ class ServiceManagerTests(unittest.TestCase):
 
     def test_legacy_mlx_status_is_readonly_and_start_is_blocked(self):
         before = self.legacy_mlx()
-        with patch.object(self.manager, 'ctl', side_effect=AssertionError('no launchctl')), patch.object(sm.os, 'execv', side_effect=AssertionError('no exec')), contextlib.redirect_stdout(io.StringIO()) as out:
+        with (
+            patch.object(self.manager, 'ctl', side_effect=AssertionError('no launchctl')),
+            patch.object(sm.os, 'execv', side_effect=AssertionError('no exec')),
+            contextlib.redirect_stdout(io.StringIO()) as out,
+        ):
             self.manager.status()
         self.assertIn('旧版 MLX 托管配置已停用', out.getvalue())
-        with patch.object(sm.sys, 'platform', 'darwin'), patch.object(self.manager, 'ctl') as ctl, patch.object(sm.os, 'execv') as execute:
+        with (
+            patch.object(sm.sys, 'platform', 'darwin'),
+            patch.object(self.manager, 'ctl') as ctl,
+            patch.object(sm.os, 'execv') as execute,
+        ):
             for action in (self.manager.start, self.manager.run, self.manager.enable_login):
                 with self.assertRaisesRegex(sm.ServiceError, '旧版 MLX'):
                     action()
@@ -216,7 +277,12 @@ class ServiceManagerTests(unittest.TestCase):
 
     def test_legacy_mlx_can_be_explicitly_stopped_without_model_validation(self):
         self.legacy_mlx()
-        with patch.object(sm.sys, 'platform', 'darwin'), patch.object(self.manager, 'loaded', return_value=dict(loaded=True, owned=True, pid=123)), patch.object(self.manager, 'ctl', return_value=Mock(returncode=0)) as ctl, contextlib.redirect_stdout(io.StringIO()):
+        with (
+            patch.object(sm.sys, 'platform', 'darwin'),
+            patch.object(self.manager, 'loaded', return_value=dict(loaded=True, owned=True, pid=123)),
+            patch.object(self.manager, 'ctl', return_value=Mock(returncode=0)) as ctl,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             self.manager.stop()
         ctl.assert_called_once_with('bootout', self.manager.target)
 
@@ -241,8 +307,11 @@ class ServiceManagerTests(unittest.TestCase):
         self.assertTrue(persisted.is_file())
         self.assertTrue((self.manager.bundle / 'path_validation.py').is_file())
         self.assertTrue((self.manager.bundle / 'catalog.json').is_file())
-        result = subprocess.run([sm.sys.executable, str(persisted), '--root', str(self.root),
-                                 '--models-dir', str(self.models), 'status'], capture_output=True, text=True)
+        result = subprocess.run(
+            [sm.sys.executable, str(persisted), '--root', str(self.root), '--models-dir', str(self.models), 'status'],
+            capture_output=True,
+            text=True,
+        )
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn('已通过托管结构', result.stdout)
         self.assertEqual(str(persisted), self.manager.program_args()[1])
@@ -257,7 +326,11 @@ class ServiceManagerTests(unittest.TestCase):
     def test_legacy_read_and_run_stay_loopback_without_write(self):
         before = self.legacy_settings()
         self.assertEqual('127.0.0.1', self.manager.validate()['proxy_bind'])
-        with patch.object(sm.sys, 'platform', 'darwin'), patch.object(sm, 'available_port') as ports, patch.object(sm.os, 'execv') as execute:
+        with (
+            patch.object(sm.sys, 'platform', 'darwin'),
+            patch.object(sm, 'available_port') as ports,
+            patch.object(sm.os, 'execv') as execute,
+        ):
             self.manager.run()
         self.assertEqual('127.0.0.1:8080', execute.call_args.args[1][-1])
         self.assertEqual((8080, '127.0.0.1'), ports.call_args_list[0].args)
@@ -267,7 +340,10 @@ class ServiceManagerTests(unittest.TestCase):
         self.legacy_settings()
         before = self.manager.config.read_bytes()
         data = self.manager.read_settings()
-        with patch.object(sm.subprocess, 'run', side_effect=AssertionError('no launch')), contextlib.redirect_stdout(io.StringIO()):
+        with (
+            patch.object(sm.subprocess, 'run', side_effect=AssertionError('no launch')),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             self.manager.set_bind('0.0.0.0')
         data['proxy_bind'] = '0.0.0.0'
         self.assertEqual(data, self.manager.validate())
@@ -294,8 +370,12 @@ class ServiceManagerTests(unittest.TestCase):
                 self.manager.validate()
 
     def test_wildcard_port_probe_and_backend_loopback(self):
-        self.configure()
-        with patch.object(sm.sys, 'platform', 'darwin'), patch.object(sm, 'available_port') as ports, patch.object(sm.os, 'execv'):
+        self.configure(bind='0.0.0.0')
+        with (
+            patch.object(sm.sys, 'platform', 'darwin'),
+            patch.object(sm, 'available_port') as ports,
+            patch.object(sm.os, 'execv'),
+        ):
             self.manager.run()
         self.assertEqual([(8080, '0.0.0.0'), (18081,)], [call.args for call in ports.call_args_list])
         sock = Mock()
@@ -306,7 +386,7 @@ class ServiceManagerTests(unittest.TestCase):
         sock.bind.assert_called_once_with(('0.0.0.0', 8080))
 
     def test_lan_status_has_correct_client_addresses(self):
-        self.configure()
+        self.configure(bind='0.0.0.0')
         with contextlib.redirect_stdout(io.StringIO()) as out:
             self.manager.status()
         text = out.getvalue()
@@ -320,7 +400,11 @@ class ServiceManagerTests(unittest.TestCase):
         self.legacy_settings()
         before = self.manager.settings.read_bytes()
         prefix = ['--root', str(self.root), '--models-dir', str(self.models), 'set-bind']
-        with patch.object(sm.sys.stdin, 'isatty', return_value=False), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        with (
+            patch.object(sm.sys.stdin, 'isatty', return_value=False),
+            contextlib.redirect_stdout(io.StringIO()),
+            contextlib.redirect_stderr(io.StringIO()),
+        ):
             self.assertEqual(2, sm.main(prefix + ['--yes']))
             self.assertEqual(2, sm.main(prefix + ['--proxy-bind', '0.0.0.0']))
             self.assertEqual(before, self.manager.settings.read_bytes())
@@ -329,14 +413,33 @@ class ServiceManagerTests(unittest.TestCase):
 
     def test_start_cannot_silently_override_saved_bind(self):
         self.legacy_settings()
-        with patch.object(self.manager, 'start', side_effect=AssertionError('must not start')), contextlib.redirect_stderr(io.StringIO()):
-            code = sm.main(['--root', str(self.root), '--models-dir', str(self.models), 'start', '--proxy-bind', '0.0.0.0', '--yes'])
+        with (
+            patch.object(self.manager, 'start', side_effect=AssertionError('must not start')),
+            contextlib.redirect_stderr(io.StringIO()),
+        ):
+            code = sm.main(
+                [
+                    '--root',
+                    str(self.root),
+                    '--models-dir',
+                    str(self.models),
+                    'start',
+                    '--proxy-bind',
+                    '0.0.0.0',
+                    '--yes',
+                ]
+            )
         self.assertEqual(2, code)
         self.assertEqual('127.0.0.1', self.manager.read_settings()['proxy_bind'])
 
     def test_menu_explicit_bind_migration_without_reconfigure(self):
         self.legacy_settings()
-        with patch.object(sm, 'select_menu', side_effect=['8', '0']), patch('builtins.input', side_effect=['', '1', '']), patch.object(sm, 'confirm', return_value=True), contextlib.redirect_stdout(io.StringIO()):
+        with (
+            patch.object(sm, 'select_menu', side_effect=['8', '0']),
+            patch('builtins.input', side_effect=['2', '1', '']),
+            patch.object(sm, 'confirm', return_value=True),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             sm.menu(self.manager)
         self.assertEqual('0.0.0.0', self.manager.validate()['proxy_bind'])
 

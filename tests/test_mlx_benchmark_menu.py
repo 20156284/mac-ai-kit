@@ -1,4 +1,5 @@
 """MLX entry routing uses a recording stub, never a service or inference."""
+
 import json
 import os
 from pathlib import Path
@@ -20,17 +21,25 @@ class MlxBenchmarkMenuTests(unittest.TestCase):
         for name in ('path_validation.sh', 'model_directory.sh', 'terminal_ui.sh'):
             shutil.copy2(ROOT / 'scripts' / name, self.root / 'scripts' / name)
         (self.root / 'scripts/mlx_benchmark.py').write_text(
-            'import json, sys\nprint("MLX_ARGS=" + json.dumps(sys.argv[1:]))\n')
-        self.env = dict(os.environ, HOME=str(self.root / 'home'),
-                        XDG_CONFIG_HOME=str(self.root / 'config'), NO_COLOR='1')
+            'import json, sys\nprint("MLX_ARGS=" + json.dumps(sys.argv[1:]))\n'
+        )
+        self.env = dict(
+            os.environ, HOME=str(self.root / 'home'), XDG_CONFIG_HOME=str(self.root / 'config'), NO_COLOR='1'
+        )
         config = self.root / 'config/mac-ai-kit'
         config.mkdir(parents=True)
         self.saved = str(self.root / 'saved-models')
         (config / 'model-directory').write_text(self.saved + '\n')
 
     def run_start(self, *args, input=''):
-        return subprocess.run(['bash', str(self.root / 'start.sh'), *args],
-            input=input, text=True, capture_output=True, env=self.env, timeout=10)
+        return subprocess.run(
+            ['bash', str(self.root / 'start.sh'), *args],
+            input=input,
+            text=True,
+            capture_output=True,
+            env=self.env,
+            timeout=10,
+        )
 
     def test_advanced_routes_saved_directory_and_explicit_url(self):
         p = self.run_start('mlx-benchmark', '--base-url', 'http://127.0.0.1:8080/v1')
@@ -59,7 +68,9 @@ class MlxBenchmarkMenuTests(unittest.TestCase):
         self.assertIn('MLX-Serve 长上下文 benchmark', p.stdout)
         self.assertIn('0、50K、100K、200K 四档测试', p.stdout)
         self.assertNotIn('PP 计时不准', p.stdout)
-        self.assertIn('0、50K、100K、200K 上下文吞吐测试；PP 计时不兼容 MLX-Serve、oMLX 等框架的空 role 消息。', p.stdout)
+        self.assertIn(
+            '0、50K、100K、200K 上下文吞吐测试；PP 计时不兼容 MLX-Serve、oMLX 等框架的空 role 消息。', p.stdout
+        )
 
     def test_help_lists_both_commands(self):
         p = self.run_start('--help')

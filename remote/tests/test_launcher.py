@@ -1,4 +1,5 @@
 """Launcher smoke tests. Fake macOS/launchctl/git/pnpm; no network or real services."""
+
 import base64
 import hashlib
 import json
@@ -10,6 +11,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+
 
 class LauncherTests(unittest.TestCase):
     def setUp(self):
@@ -31,7 +33,7 @@ class LauncherTests(unittest.TestCase):
         for name, body in {
             'uname': 'echo Darwin',
             'pnpm': 'echo "PNPM MUST NOT EXECUTE" >&2; exit 99',
-            'launchctl': 'printf "%s\\n" "$*" >> "$HOME/launchctl-calls"; if [ \"${SERVICE_LOADED:-}\" = 1 ] && [ \"$1\" = print ]; then exit 0; fi; exit 1',
+            'launchctl': 'printf "%s\\n" "$*" >> "$HOME/launchctl-calls"; if [ "${SERVICE_LOADED:-}" = 1 ] && [ "$1" = print ]; then exit 0; fi; exit 1',
             'git': '''shift 2
 case "$1" in
 rev-parse) echo true;;
@@ -62,10 +64,34 @@ esac''',
 
     def run_script(self, action, data='', extra_env=None):
         env = dict(self.env, **(extra_env or {}))
-        return subprocess.run(['bash', str(self.launcher), '--project', str(self.project), action], input=data, text=True, capture_output=True, env=env)
+        return subprocess.run(
+            ['bash', str(self.launcher), '--project', str(self.project), action],
+            input=data,
+            text=True,
+            capture_output=True,
+            env=env,
+        )
 
-    def setup_input(self, confirm='YES', output=None, retention='', username='operator', password='correct-horse-battery', password2=None):
-        return '\n'.join([str(output or self.output), retention, username, password, password if password2 is None else password2, confirm, ''])
+    def setup_input(
+        self,
+        confirm='YES',
+        output=None,
+        retention='',
+        username='operator',
+        password='correct-horse-battery',
+        password2=None,
+    ):
+        return '\n'.join(
+            [
+                str(output or self.output),
+                retention,
+                username,
+                password,
+                password if password2 is None else password2,
+                confirm,
+                '',
+            ]
+        )
 
     def test_short_usernames_and_six_character_password(self):
         for username in ['a', 'ab', '中']:
@@ -75,9 +101,13 @@ esac''',
             self.assertEqual(c['username'], username)
 
     def test_trim_project_argument_and_output_preserving_internal_spaces(self):
-        p = subprocess.run(['bash', str(self.launcher), '--project', ' \t' + str(self.project) + '\t ', '--configure'],
-                           input=self.setup_input(output=' \t' + str(self.output) + '\t ', retention=' 24 ', username=' a '),
-                           text=True, capture_output=True, env=self.env)
+        p = subprocess.run(
+            ['bash', str(self.launcher), '--project', ' \t' + str(self.project) + '\t ', '--configure'],
+            input=self.setup_input(output=' \t' + str(self.output) + '\t ', retention=' 24 ', username=' a '),
+            text=True,
+            capture_output=True,
+            env=self.env,
+        )
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         c = json.loads((self.state / 'config.json').read_text())
         self.assertEqual(c['repo'], str(self.project))
@@ -94,9 +124,13 @@ esac''',
         for name in ['terminal_ui.sh', 'path_validation.sh', 'model_directory.sh', 'path_validation.py']:
             shutil.copy2(ROOT.parent / 'scripts' / name, kit / 'scripts' / name)
         shutil.copy2(self.launcher, kit / 'remote/start-remotion-remote.sh')
-        p = subprocess.run(['bash', str(kit / 'start.sh'), 'remote', '--project', '  ' + str(self.project) + '  '],
-                           input=self.setup_input(output='  ' + str(self.output) + '  ', username='a', password='123456'),
-                           text=True, capture_output=True, env=self.env)
+        p = subprocess.run(
+            ['bash', str(kit / 'start.sh'), 'remote', '--project', '  ' + str(self.project) + '  '],
+            input=self.setup_input(output='  ' + str(self.output) + '  ', username='a', password='123456'),
+            text=True,
+            capture_output=True,
+            env=self.env,
+        )
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertNotIn('CONFIG_OK', p.stdout)
         c = json.loads((self.state / 'config.json').read_text())
@@ -107,16 +141,24 @@ esac''',
         self.assert_no_service_mutations()
 
     def test_interactive_project_trim(self):
-        p = subprocess.run(['bash', str(self.launcher), '--configure'],
-                           input=' \t' + str(self.project) + ' \n' + self.setup_input(),
-                           text=True, capture_output=True, env=self.env)
+        p = subprocess.run(
+            ['bash', str(self.launcher), '--configure'],
+            input=' \t' + str(self.project) + ' \n' + self.setup_input(),
+            text=True,
+            capture_output=True,
+            env=self.env,
+        )
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertTrue((self.state / 'config.json').is_file())
 
     def test_url_not_mistaken_for_directory_or_fetched(self):
         for value in [' https://example.invalid/repo.git ', ' file:///tmp/project ', 'git@example.invalid:repo']:
-            p = subprocess.run(['bash', str(self.launcher), '--project', value, '--configure'],
-                               text=True, capture_output=True, env=self.env)
+            p = subprocess.run(
+                ['bash', str(self.launcher), '--project', value, '--configure'],
+                text=True,
+                capture_output=True,
+                env=self.env,
+            )
             self.assertNotEqual(p.returncode, 0)
             self.assertIn('不接受 URL', p.stderr)
             self.assertFalse(self.state.exists())
@@ -125,9 +167,15 @@ esac''',
         self.assertIn('不接受 URL', p.stderr)
 
     def test_invalid_credentials_and_mismatch_do_not_save(self):
-        for kwargs in [dict(username=''), dict(username='   '), dict(username='a:b'),
-                       dict(username='a\tb'), dict(username='a\rb'), dict(password='12345'),
-                       dict(password='123456', password2='654321')]:
+        for kwargs in [
+            dict(username=''),
+            dict(username='   '),
+            dict(username='a:b'),
+            dict(username='a\tb'),
+            dict(username='a\rb'),
+            dict(password='12345'),
+            dict(password='123456', password2='654321'),
+        ]:
             p = self.run_script('--configure', self.setup_input(**kwargs))
             self.assertNotEqual(p.returncode, 0, kwargs)
             self.assertFalse(self.state.exists())
@@ -138,7 +186,9 @@ esac''',
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         c = json.loads((self.state / 'config.json').read_text())
         _, salt, digest = c['passwordHash'].split('$')
-        self.assertEqual(hashlib.scrypt(password.encode(), salt=salt.encode(), n=16384, r=8, p=1, dklen=32).hex(), digest)
+        self.assertEqual(
+            hashlib.scrypt(password.encode(), salt=salt.encode(), n=16384, r=8, p=1, dklen=32).hex(), digest
+        )
         self.assertNotIn(password, (self.state / 'config.json').read_text())
 
     def test_foreground_embedded_runtime_and_private_config(self):
@@ -155,7 +205,7 @@ esac''',
         self.assertEqual(c['retentionHours'], 0)
         self.assertEqual(c['outputIdentity']['real'], str(self.output))
         self.assertEqual(c['outputIdentity']['dev'], self.output.stat().st_dev)
-        self.assertEqual(c['retention'], {'mode':'manual'})
+        self.assertEqual(c['retention'], {'mode': 'manual'})
         self.assertTrue(c['passwordHash'].startswith('scrypt$'))
         self.assertEqual((self.state / 'config.json').stat().st_mode & 0o777, 0o600)
         self.assertEqual(self.state.stat().st_mode & 0o777, 0o700)
@@ -250,7 +300,7 @@ esac''',
         self.assertFalse(self.state.exists())
 
     def test_detached_head_rejected(self):
-        p = self.run_script('--foreground', extra_env={'DETACHED':'1'})
+        p = self.run_script('--foreground', extra_env={'DETACHED': '1'})
         self.assertNotEqual(p.returncode, 0)
         self.assertIn('detached HEAD', p.stderr)
         self.assertFalse(self.state.exists())
@@ -265,14 +315,14 @@ esac''',
         self.assertFalse(self.state.exists())
 
     def test_failed_git_read_does_not_save(self):
-        p = self.run_script('--foreground', self.setup_input(), {'GIT_FAIL':'1'})
+        p = self.run_script('--foreground', self.setup_input(), {'GIT_FAIL': '1'})
         self.assertNotEqual(p.returncode, 0)
         self.assertFalse(self.state.exists())
         self.assertIn('不会创建或修改 Git 凭据', p.stderr)
 
     def test_live_foreground_runtime_is_not_overwritten(self):
         self.state.mkdir(parents=True)
-        (self.state / 'runtime.lock').write_text(json.dumps({'pid':os.getpid()}))
+        (self.state / 'runtime.lock').write_text(json.dumps({'pid': os.getpid()}))
         (self.state / 'config.json').write_text('original')
         p = self.run_script('--foreground', self.setup_input())
         self.assertNotEqual(p.returncode, 0)
@@ -282,6 +332,7 @@ esac''',
         p = self.run_script('--status')
         self.assertEqual(p.returncode, 0)
         self.assertFalse(self.state.exists())
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -17,10 +17,30 @@ class InventoryTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='api test ')
         self.root = Path(self.temp.name)
-        self.catalog = {'models': [
-            {'id': 'main', 'name': '主模型', 'subdir': 'audio/main', 'runtime': 'audio.cpp', 'requires': ['dep'], 'expected_files': {'weight.gguf': {'bytes': 4}}},
-            {'id': 'dep', 'name': '依赖', 'subdir': 'audio/dep', 'expected_files': {'config.json': {'bytes': 2}}}]}
-        self.templates = {'runtimes': [{'id': 'audio.cpp', 'name': 'Audio', 'probes': ['bin/audiocpp_server'], 'markdown': '{{BINARY_PATH}} --help'}], 'models': {'main': {'markdown': '模型 {{MODEL_DIR}} 文件 {{MODEL_FILE}} JSON {{MODEL_DIR_JSON}}'}}}
+        self.catalog = {
+            'models': [
+                {
+                    'id': 'main',
+                    'name': '主模型',
+                    'subdir': 'audio/main',
+                    'runtime': 'audio.cpp',
+                    'requires': ['dep'],
+                    'expected_files': {'weight.gguf': {'bytes': 4}},
+                },
+                {'id': 'dep', 'name': '依赖', 'subdir': 'audio/dep', 'expected_files': {'config.json': {'bytes': 2}}},
+            ]
+        }
+        self.templates = {
+            'runtimes': [
+                {
+                    'id': 'audio.cpp',
+                    'name': 'Audio',
+                    'probes': ['bin/audiocpp_server'],
+                    'markdown': '{{BINARY_PATH}} --help',
+                }
+            ],
+            'models': {'main': {'markdown': '模型 {{MODEL_DIR}} 文件 {{MODEL_FILE}} JSON {{MODEL_DIR_JSON}}'}},
+        }
 
     def tearDown(self):
         self.temp.cleanup()
@@ -99,11 +119,13 @@ class InventoryTests(unittest.TestCase):
         target = self.put('API.md', b'manual\n')
         block = api.BEGIN + '\nnew\n' + api.END + '\n'
         real_replace = os.replace
+
         def checked_replace(source, destination):
             self.assertEqual(target.read_bytes(), b'manual\n')
             self.assertTrue(Path(source).read_text().endswith(block))
             self.assertEqual(Path(source).parent, self.root)
             real_replace(source, destination)
+
         with patch.object(api.os, 'replace', side_effect=checked_replace):
             api.update_document(self.root, block)
         self.assertTrue(target.read_text().endswith(block))
@@ -116,15 +138,18 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(list(self.root.glob('API.md.bak.*')), [])
         (self.root / 'API.md').unlink()
         os.mkfifo(self.root / 'API.md')
-        with self.assertRaises(ValueError): api.update_document(self.root, 'x')
+        with self.assertRaises(ValueError):
+            api.update_document(self.root, 'x')
 
     def test_symlink_output_and_directory_refused(self):
         other = self.put('outside', b'untouched')
         (self.root / 'API.md').symlink_to(other)
-        with self.assertRaises(ValueError): api.update_document(self.root, 'bad')
+        with self.assertRaises(ValueError):
+            api.update_document(self.root, 'bad')
         self.assertEqual(other.read_bytes(), b'untouched')
         (self.root / 'linked').symlink_to(self.root, target_is_directory=True)
-        with self.assertRaises(ValueError): api.safe_root(self.root / 'linked')
+        with self.assertRaises(ValueError):
+            api.safe_root(self.root / 'linked')
 
     def test_directory_symlinks_not_followed(self):
         outside = self.root / 'external'
@@ -134,7 +159,14 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(self.inspect()[2][0]['state'], 'missing')
 
     def test_h3_leaf_shared_link_metadata(self):
-        self.catalog['models'] = [{'id': 'h3', 'subdir': 'video/h3', 'reuse_family': 'minimax-h3-mlx-serve', 'expected_files': {'text_encoder.safetensors': {'bytes': 4}}}]
+        self.catalog['models'] = [
+            {
+                'id': 'h3',
+                'subdir': 'video/h3',
+                'reuse_family': 'minimax-h3-mlx-serve',
+                'expected_files': {'text_encoder.safetensors': {'bytes': 4}},
+            }
+        ]
         source = self.put('other/text_encoder.safetensors')
         destination = self.root / 'video/h3/text_encoder.safetensors'
         destination.parent.mkdir(parents=True)
@@ -148,17 +180,35 @@ class InventoryTests(unittest.TestCase):
 
     def test_escape_and_bad_markers_refused(self):
         self.catalog['models'][0]['subdir'] = '../escape'
-        with self.assertRaises(ValueError): self.inspect()
+        with self.assertRaises(ValueError):
+            self.inspect()
         self.put('API.md', api.BEGIN.encode())
-        with self.assertRaises(ValueError): api.update_document(self.root, 'x')
+        with self.assertRaises(ValueError):
+            api.update_document(self.root, 'x')
 
     def test_cli_if_present_and_no_uv(self):
         catalog = self.put('catalog.json', json.dumps(self.catalog).encode())
         templates = self.put('templates.json', json.dumps(self.templates).encode())
-        result = subprocess.run([os.sys.executable, str(ROOT / 'scripts/api_inventory.py'), '--directory', str(self.root), '--catalog', str(catalog), '--templates', str(templates), '--if-present'], capture_output=True, text=True)
+        result = subprocess.run(
+            [
+                os.sys.executable,
+                str(ROOT / 'scripts/api_inventory.py'),
+                '--directory',
+                str(self.root),
+                '--catalog',
+                str(catalog),
+                '--templates',
+                str(templates),
+                '--if-present',
+            ],
+            capture_output=True,
+            text=True,
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.root / 'API.md').exists())
-        result = subprocess.run(['bash', str(ROOT / 'start.sh'), 'api', '--directory', str(self.root)], capture_output=True, text=True)
+        result = subprocess.run(
+            ['bash', str(ROOT / 'start.sh'), 'api', '--directory', str(self.root)], capture_output=True, text=True
+        )
         # Defaults require the real templates file, supplied with the release.
         if (ROOT / 'config/api_templates.json').exists():
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -175,4 +225,5 @@ class InventoryTests(unittest.TestCase):
         self.assertNotIn('ensure_runtime', dispatch)
 
 
-if __name__ == '__main__': unittest.main()
+if __name__ == '__main__':
+    unittest.main()

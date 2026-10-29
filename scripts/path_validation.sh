@@ -8,8 +8,16 @@ trim_path_input() {
   while [ "$changed" -eq 1 ]; do
     changed=0
     for space in "${whitespace[@]}"; do
-      case "$clean" in "$space"*) clean="${clean#"$space"}"; changed=1 ;; esac
-      case "$clean" in *"$space") clean="${clean%"$space"}"; changed=1 ;; esac
+      case "$clean" in "$space"*)
+        clean="${clean#"$space"}"
+        changed=1
+        ;;
+      esac
+      case "$clean" in *"$space")
+        clean="${clean%"$space"}"
+        changed=1
+        ;;
+      esac
     done
   done
   TRIMMED_PATH="$clean"
@@ -20,23 +28,39 @@ validate_model_root_shell() {
   local original="$TRIMMED_PATH" rest="$TRIMMED_PATH" part clean suggestion='' invalid=0 more=1 has_component=0
   VALIDATED_MODEL_ROOT=""
   while [ "$more" -eq 1 ]; do
-    case "$rest" in */*) part="${rest%%/*}"; rest="${rest#*/}" ;; *) part="$rest"; more=0 ;; esac
-    case "$part" in ''|.) ;; *) has_component=1 ;; esac
+    case "$rest" in */*)
+      part="${rest%%/*}"
+      rest="${rest#*/}"
+      ;;
+    *)
+      part="$rest"
+      more=0
+      ;;
+    esac
+    case "$part" in '' | .) ;; *) has_component=1 ;; esac
     clean="$part"
     trim_path_input "$part"
     clean="$TRIMMED_PATH"
     [ "$clean" = "$part" ] || invalid=1
     suggestion="$suggestion$clean"
     [ "$more" -eq 0 ] || suggestion="$suggestion/"
-    if [ "$part" = '..' ]; then printf '模型目录不能包含 ..：%q\n' "$original" >&2; return 2; fi
+    if [ "$part" = '..' ]; then
+      printf '模型目录不能包含 ..：%q\n' "$original" >&2
+      return 2
+    fi
   done
   if [ "$invalid" -ne 0 ]; then
     printf '模型目录组件首尾含空白：%q\n建议相邻规范路径：%q；请显式重新选择。不会自动改名、迁移或删除旧目录。\n' "$original" "$suggestion" >&2
     return 2
   fi
-  case "$original" in ''|/|*$'\n'*|*$'\r'*) printf '模型目录无效：%q\n' "$original" >&2; return 2 ;; esac
+  case "$original" in '' | / | *$'\n'* | *$'\r'*)
+    printf '模型目录无效：%q\n' "$original" >&2
+    return 2
+    ;;
+  esac
   if [ "$has_component" -eq 0 ] && [[ "$original" = /* ]]; then
-    printf '不能使用文件系统根目录：%q\n' "$original" >&2; return 2
+    printf '不能使用文件系统根目录：%q\n' "$original" >&2
+    return 2
   fi
   VALIDATED_MODEL_ROOT="$original"
 }

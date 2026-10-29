@@ -1,4 +1,5 @@
 """菜单不继承被解压更新移除的旧工作目录。"""
+
 from pathlib import Path
 import subprocess
 import sys
@@ -19,11 +20,19 @@ class MenuWorkingDirectoryTests(unittest.TestCase):
 
     def test_pause_from_deleted_cwd_has_no_shell_init_warning(self):
         with tempfile.TemporaryDirectory() as directory:
-            gone = Path(directory) / 'gone'; gone.mkdir()
-            code = ('import os,sys; sys.path.insert(0,sys.argv[1]); import service_manager; '
-                    'os.chdir(sys.argv[2]); os.rmdir(sys.argv[2]); service_manager.pause_menu()')
-            result = subprocess.run([sys.executable, '-c', code, str(ROOT / 'scripts'), str(gone)],
-                                    cwd=directory, stdin=subprocess.DEVNULL, capture_output=True, text=True)
+            gone = Path(directory) / 'gone'
+            gone.mkdir()
+            code = (
+                'import os,sys; sys.path.insert(0,sys.argv[1]); import service_manager; '
+                'os.chdir(sys.argv[2]); os.rmdir(sys.argv[2]); service_manager.pause_menu()'
+            )
+            result = subprocess.run(
+                [sys.executable, '-c', code, str(ROOT / 'scripts'), str(gone)],
+                cwd=directory,
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                text=True,
+            )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertNotIn('getcwd', result.stderr)
             self.assertNotIn('shell-init', result.stderr)

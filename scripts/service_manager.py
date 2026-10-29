@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """显式管理用户级 llama-swap；不安装、不推理、不使用 sudo。"""
+
 import argparse
 import hashlib
 import http.client
@@ -51,18 +52,20 @@ def proxy_bind(value):
 
 def access_notice(data):
     if data['proxy_bind'] == '0.0.0.0':
-        return ('llama-swap 监听所有 IPv4 接口（0.0.0.0），不是仅限局域网的访问控制；'
-                '未配置认证或 TLS，可达设备能发起推理并占用资源。仅用于可信局域网，不要映射公网。'
-                '不修改防火墙或路由器。')
+        return (
+            'llama-swap 监听所有 IPv4 接口（0.0.0.0），不是仅限局域网的访问控制；'
+            '未配置认证或 TLS，可达设备能发起推理并占用资源。仅用于可信局域网，不要映射公网。'
+            '不修改防火墙或路由器。'
+        )
     return 'llama-swap 仅监听本机 127.0.0.1，其他机器不能访问。'
 
 
 def choose_proxy_bind():
-    print('llama-swap 访问范围：1 可信局域网（0.0.0.0）  2 仅本机（127.0.0.1）')
+    print('llama-swap 访问范围：1 仅本机（127.0.0.1）  2 可信局域网（0.0.0.0）')
     choice = input('选择 [1]：').strip() or '1'
     if choice not in ('1', '2'):
         raise ServiceError('无效访问范围')
-    value = '0.0.0.0' if choice == '1' else '127.0.0.1'
+    value = '127.0.0.1' if choice == '1' else '0.0.0.0'
     print(access_notice({'proxy_bind': value}))
     return value
 
@@ -120,7 +123,9 @@ class Manager:
 
     def command_config(self, model, server, port, backend="gguf"):
         if backend != "gguf":
-            raise ServiceError('旧版 MLX 托管配置已停用；请手工打开 MLX-Serve 桌面 App 并开启 API。现有文件和进程未改动')
+            raise ServiceError(
+                '旧版 MLX 托管配置已停用；请手工打开 MLX-Serve 桌面 App 并开启 API。现有文件和进程未改动'
+            )
         model, server = checked_path(model), checked_path(server)
         if not model.is_file() or model.suffix.lower() != '.gguf':
             raise ServiceError('请选择已经下载的 .gguf 文件；不会下载或加载权重')
@@ -131,11 +136,31 @@ class Manager:
         # llama-swap 会展开 ${...}，因此除命令转义外还禁止路径宏。
         if '${' in str(model) or '${' in str(server):
             raise ServiceError('路径含 llama-swap 宏语法 ${，不能用于托管配置')
-        args = [str(server), '--model', str(model), '--alias', 'local-gguf', '--host',
-                '127.0.0.1', '--port', str(port), '--ctx-size', '4096', '--parallel',
-                '1', '--n-gpu-layers', '99', '--offline']
-        return {'healthCheckTimeout': 600, 'globalTTL': 0, 'models': {
-            'local-gguf': {'cmd': shlex.join(args), 'proxy': f'http://127.0.0.1:{port}', 'checkEndpoint': '/health'}}}
+        args = [
+            str(server),
+            '--model',
+            str(model),
+            '--alias',
+            'local-gguf',
+            '--host',
+            '127.0.0.1',
+            '--port',
+            str(port),
+            '--ctx-size',
+            '4096',
+            '--parallel',
+            '1',
+            '--n-gpu-layers',
+            '99',
+            '--offline',
+        ]
+        return {
+            'healthCheckTimeout': 600,
+            'globalTTL': 0,
+            'models': {
+                'local-gguf': {'cmd': shlex.join(args), 'proxy': f'http://127.0.0.1:{port}', 'checkEndpoint': '/health'}
+            },
+        }
 
     def read_settings(self):
         data = json.loads(self.settings.read_text())
@@ -147,7 +172,9 @@ class Manager:
         if data['models_dir'] != str(self.models):
             raise ServiceError('当前模型目录已改变，请重新配置服务；不会使用上次目录')
         if data['backend'] == 'mlx':
-            raise ServiceError('旧版 MLX 托管配置已停用；请手工打开 MLX-Serve 桌面 App 并开启 API。现有文件和进程未改动')
+            raise ServiceError(
+                '旧版 MLX 托管配置已停用；请手工打开 MLX-Serve 桌面 App 并开启 API。现有文件和进程未改动'
+            )
         if data['backend'] != 'gguf':
             raise ServiceError('未知推理后端')
         data['port'] = port_number(data['port'])
@@ -165,7 +192,7 @@ class Manager:
             raise ServiceError('配置已改变或包含未托管命令；请重新配置。不会执行任意 YAML、启动钩子或预加载模型')
         return data
 
-    def configure(self, model, server=None, port=8080, backend_port=18081, backend="gguf", bind="0.0.0.0"):
+    def configure(self, model, server=None, port=8080, backend_port=18081, backend="gguf", bind="127.0.0.1"):
         if backend != 'gguf':
             raise ServiceError('MLX-Serve 由桌面 App 手工启动，不再配置命令行后端')
         bind = proxy_bind(bind)
@@ -179,8 +206,15 @@ class Manager:
         if not server:
             raise ServiceError('未找到 llama-server；请先安装 llama.cpp')
         config = self.command_config(model, server, backend_port, backend)
-        data = dict(models_dir=str(self.models), model=str(checked_path(model)),
-                    server=str(checked_path(server)), port=port, backend_port=backend_port, backend=backend, proxy_bind=bind)
+        data = dict(
+            models_dir=str(self.models),
+            model=str(checked_path(model)),
+            server=str(checked_path(server)),
+            port=port,
+            backend_port=backend_port,
+            backend=backend,
+            proxy_bind=bind,
+        )
         self.persist_runtime()
         atomic_write(self.config, json.dumps(config, ensure_ascii=False, indent=2).encode())
         atomic_write(self.settings, json.dumps(data, ensure_ascii=False, indent=2).encode())
@@ -199,7 +233,7 @@ class Manager:
         print('llama-swap 访问范围已保存；模型、端口和后端配置保持不变，尚未启动。')
         print(access_notice(data))
 
-    def import_config(self, path, port, bind="0.0.0.0"):
+    def import_config(self, path, port, bind="127.0.0.1"):
         # 仅接受已知安全配方，不接受任意命令配置。
         raw = checked_path(path).read_text()
         try:
@@ -256,30 +290,55 @@ class Manager:
         path = Path(match.group(1).strip()) if match else None
         owned = path in (self.runtime, self.login) and self.owned_plist(path)
         pid = re.search(r'^\s*pid = (\d+)$', result.stdout, re.M)
-        return dict(loaded=True, owned=owned, pid=int(pid.group(1)) if pid else None,
-                    detail='已加载' if owned else '同名服务归属无法确认；不会控制')
+        return dict(
+            loaded=True,
+            owned=owned,
+            pid=int(pid.group(1)) if pid else None,
+            detail='已加载' if owned else '同名服务归属无法确认；不会控制',
+        )
 
     def owned_plist(self, path):
         try:
             data = plistlib.loads(path.read_bytes())
             args = data.get('ProgramArguments', [])
             expected = self.program_args()
-            return (data.get('Label') == self.label and data.get('MacAIKitRoot') == str(self.root)
-                    and isinstance(args, list) and len(args) == 7
-                    and args[:5] == expected[:5] and args[6:] == ['run']
-                    and isinstance(args[5], str) and Path(args[5]).is_absolute())
+            return (
+                data.get('Label') == self.label
+                and data.get('MacAIKitRoot') == str(self.root)
+                and isinstance(args, list)
+                and len(args) == 7
+                and args[:5] == expected[:5]
+                and args[6:] == ['run']
+                and isinstance(args[5], str)
+                and Path(args[5]).is_absolute()
+            )
         except (OSError, ValueError, plistlib.InvalidFileException):
             return False
 
     def program_args(self):
-        return [sys.executable, str(self.bundle / 'service_manager.py'), '--root', str(self.root),
-                '--models-dir', str(self.models), 'run']
+        return [
+            sys.executable,
+            str(self.bundle / 'service_manager.py'),
+            '--root',
+            str(self.root),
+            '--models-dir',
+            str(self.models),
+            'run',
+        ]
 
     def plist(self):
-        return plistlib.dumps(dict(Label=self.label, ProgramArguments=self.program_args(),
-            MacAIKitRoot=str(self.root), RunAtLoad=True, KeepAlive=False,
-            StandardOutPath=str(self.base / 'stdout.log'), StandardErrorPath=str(self.base / 'stderr.log'),
-            EnvironmentVariables={'PATH': '/usr/bin:/bin:/usr/sbin:/sbin'}))
+        return plistlib.dumps(
+            dict(
+                Label=self.label,
+                ProgramArguments=self.program_args(),
+                MacAIKitRoot=str(self.root),
+                RunAtLoad=True,
+                KeepAlive=False,
+                StandardOutPath=str(self.base / 'stdout.log'),
+                StandardErrorPath=str(self.base / 'stderr.log'),
+                EnvironmentVariables={'PATH': '/usr/bin:/bin:/usr/sbin:/sbin'},
+            )
+        )
 
     def require_mac(self):
         if sys.platform != 'darwin':
@@ -342,7 +401,9 @@ class Manager:
         atomic_write(self.login, self.plist())
         if self.ctl('enable', self.target).returncode:
             raise ServiceError('登录启动文件已保存，但 launchd 启用未确认；请查看状态')
-        print(f'已设置下次用户登录启动，监听 {data["proxy_bind"]}:{data["port"]}；没有立即启动。可选择“取消登录启动”撤销。')
+        print(
+            f'已设置下次用户登录启动，监听 {data["proxy_bind"]}:{data["port"]}；没有立即启动。可选择“取消登录启动”撤销。'
+        )
 
     def disable_login(self):
         self.require_mac()
@@ -379,19 +440,34 @@ class Manager:
         if data and sys.platform == 'darwin':
             disabled = self.ctl('print-disabled', f'gui/{os.getuid()}')
             match = re.search(r'"' + re.escape(self.label) + r'"\s*=>\s*(true|false)', disabled.stdout)
-            print('launchd 启用状态：' + ('未核实' if disabled.returncode else '禁用' if match and match[1] == 'true' else '启用（默认或显式）'))
+            print(
+                'launchd 启用状态：'
+                + (
+                    '未核实'
+                    if disabled.returncode
+                    else '禁用'
+                    if match and match[1] == 'true'
+                    else '启用（默认或显式）'
+                )
+            )
         if data:
             route_id = next(iter(json.loads(self.config.read_text())['models']))
             print('客户端模型名：' + route_id)
             print(f'配置监听：{data["proxy_bind"]}:{data["port"]}；后端：127.0.0.1:{data["backend_port"]}（按需）')
             print(f'本机 API：http://127.0.0.1:{data["port"]}/v1')
             if data['proxy_bind'] == '0.0.0.0':
-                print(f'另一台机器 API：http://<这台 Mac 的局域网 IP>:{data["port"]}/v1（请替换 IP；不能填 0.0.0.0 或另一台机器自己的 localhost）')
+                print(
+                    f'另一台机器 API：http://<这台 Mac 的局域网 IP>:{data["port"]}/v1（请替换 IP；不能填 0.0.0.0 或另一台机器自己的 localhost）'
+                )
             else:
-                print('当前为仅本机配置；旧版设置保持回环。要启用局域网，请先停止 llama-swap，再选“修改 llama-swap 访问范围”，无需重选模型。')
+                print(
+                    '当前为仅本机配置；旧版设置保持回环。要启用局域网，请先停止 llama-swap，再选“修改 llama-swap 访问范围”，无需重选模型。'
+                )
             print(access_notice(data))
             healthy = state['owned'] and state['pid'] and self.health(data['port'])
-            print('llama-swap 健康：' + ('/health 返回 OK（不代表模型已加载）' if healthy else '未确认；未请求模型接口'))
+            print(
+                'llama-swap 健康：' + ('/health 返回 OK（不代表模型已加载）' if healthy else '未确认；未请求模型接口')
+            )
         print('日志：' + str(self.base / 'stderr.log'))
         print('操作：可选 llama-swap → 配置兼容 GGUF → 启动 llama-swap；登录启动是独立选项。')
         print('MLX-Serve：请手工打开桌面 App、加载模型并开启 API；不由 llama-swap 托管。')
@@ -434,8 +510,12 @@ def select_menu():
     command += '"取消登录启动" "保留当前运行实例，可另行停止" '
     command += '"修改 llama-swap 访问范围" "保留模型与端口；旧配置可显式改为局域网"; printf "%s" "$UI_CHOICE" >&"$2"'
     try:
-        subprocess.run(['/bin/bash', '-c', command, 'service-menu', str(script), str(write_fd)],
-                       pass_fds=(write_fd,), check=True, cwd=menu_working_directory())
+        subprocess.run(
+            ['/bin/bash', '-c', command, 'service-menu', str(script), str(write_fd)],
+            pass_fds=(write_fd,),
+            check=True,
+            cwd=menu_working_directory(),
+        )
         os.close(write_fd)
         write_fd = -1
         return os.read(read_fd, 32).decode().strip()
@@ -448,7 +528,9 @@ def select_menu():
 def pause_menu():
     # 复用 Bash 单键读取；不影响路径和端口等文本输入。
     script = Path(__file__).resolve().parent / 'terminal_ui.sh'
-    subprocess.run(['/bin/bash', '-c', '. "$1"; ui_pause', 'menu-pause', str(script)], check=True, cwd=menu_working_directory())
+    subprocess.run(
+        ['/bin/bash', '-c', '. "$1"; ui_pause', 'menu-pause', str(script)], check=True, cwd=menu_working_directory()
+    )
 
 
 def menu(manager):
@@ -464,7 +546,9 @@ def menu(manager):
                 port = input('llama-swap 端口 [8080]：').strip() or '8080'
                 backend = input('按需 llama-server 端口 [18081]：').strip() or '18081'
                 bind = choose_proxy_bind()
-                if confirm('确认该文件是 llama.cpp 兼容的 LLM（本检查不证明架构兼容）。保存单 GGUF 配置；使用已安装的 llama-server，后端仅回环访问。不启动、不下载。已有托管配置将被替换。'):
+                if confirm(
+                    '确认该文件是 llama.cpp 兼容的 LLM（本检查不证明架构兼容）。保存单 GGUF 配置；使用已安装的 llama-server，后端仅回环访问。不启动、不下载。已有托管配置将被替换。'
+                ):
                     manager.configure(model, port=port, backend_port=backend, bind=bind)
             elif choice == '3':
                 path = input('已有配置的绝对路径（仅接受本工具包安全格式）：').strip()
@@ -472,17 +556,27 @@ def menu(manager):
                 bind = choose_proxy_bind()
                 if confirm('验证并复制安全配置，替换已有托管配置；任意命令和启动钩子不会导入。'):
                     manager.import_config(path, port, bind)
-            elif choice == '4' and confirm(access_notice(manager.validate()) + '启动 llama-swap，不预加载权重；请先停止 GUI 中重复模型，避免端口冲突。'):
+            elif choice == '4' and confirm(
+                access_notice(manager.validate())
+                + '启动 llama-swap，不预加载权重；请先停止 GUI 中重复模型，避免端口冲突。'
+            ):
                 manager.start()
-            elif choice == '5' and confirm('停止本工具包 llama-swap 及其管理的后端，正在进行的请求可能中断；不停止其他服务。'):
+            elif choice == '5' and confirm(
+                '停止本工具包 llama-swap 及其管理的后端，正在进行的请求可能中断；不停止其他服务。'
+            ):
                 manager.stop()
-            elif choice == '6' and confirm(access_notice(manager.validate()) + '写入当前用户 LaunchAgent：下次登录启动 llama-swap，不立即启动、不预加载权重。外置卷不可用时拒绝启动。可用选项 7 撤销。'):
+            elif choice == '6' and confirm(
+                access_notice(manager.validate())
+                + '写入当前用户 LaunchAgent：下次登录启动 llama-swap，不立即启动、不预加载权重。外置卷不可用时拒绝启动。可用选项 7 撤销。'
+            ):
                 manager.enable_login()
             elif choice == '7' and confirm('取消本工具包下次登录启动，保留当前服务；要立即停止请另选 5。'):
                 manager.disable_login()
             elif choice == '8':
                 bind = choose_proxy_bind()
-                if confirm('仅保存 llama-swap 访问范围并更新托管运行脚本，保留模型和端口。需先停止 llama-swap；不启动、不改变防火墙。'):
+                if confirm(
+                    '仅保存 llama-swap 访问范围并更新托管运行脚本，保留模型和端口。需先停止 llama-swap；不启动、不改变防火墙。'
+                ):
                     manager.set_bind(bind)
         except (OSError, ValueError, subprocess.SubprocessError) as exc:
             print('未完成：' + str(exc))
@@ -493,12 +587,21 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='独立服务管理：默认仅查看；显式启停 llama-swap，不安装或加载权重')
     parser.add_argument('--root', default=str(Path.home() / 'AI'))
     parser.add_argument('--models-dir', default=str(Path.home() / 'AI/models'))
-    parser.add_argument('action', nargs='?', choices=['menu', 'status', 'configure', 'start', 'stop', 'enable-login', 'disable-login', 'set-bind', 'run'])
+    parser.add_argument(
+        'action',
+        nargs='?',
+        choices=['menu', 'status', 'configure', 'start', 'stop', 'enable-login', 'disable-login', 'set-bind', 'run'],
+    )
     parser.add_argument('--model', help='已有兼容 LLM GGUF 文件')
     parser.add_argument('--backend', choices=['gguf'], default='gguf')
     parser.add_argument('--server', help='已安装 llama-server 的绝对路径')
     parser.add_argument('--config', help='导入本工具包安全格式 JSON/YAML，拒绝任意命令')
-    parser.add_argument('--proxy-bind', choices=['0.0.0.0', '127.0.0.1'], default=None, help='新配置默认 0.0.0.0；旧配置需显式 set-bind 才会改变')
+    parser.add_argument(
+        '--proxy-bind',
+        choices=['0.0.0.0', '127.0.0.1'],
+        default=None,
+        help='新配置默认 127.0.0.1；已有配置需显式 set-bind 才会改变',
+    )
     parser.add_argument('--port', type=int, default=8080)
     parser.add_argument('--backend-port', type=int, default=None)
     parser.add_argument('--yes', action='store_true', help='仅确认本次显式变更，不用于安装或下载')
@@ -518,15 +621,18 @@ def main(argv=None):
         elif action == 'run':
             manager.run()
         else:
-            impacts = {'configure': '保存或替换托管配置，不启动。', 'start': '按保存的监听范围启动 llama-swap，不预加载模型。',
-                       'stop': '停止本工具包 llama-swap，正在进行的请求可能中断。',
-                       'enable-login': '设置下次用户登录启动 llama-swap，不立即启动；disable-login 可撤销。',
-                       'disable-login': '取消下次登录启动，保留当前运行实例。',
-                       'set-bind': '仅修改 llama-swap 访问范围并更新运行脚本，保留模型与端口。'}
+            impacts = {
+                'configure': '保存或替换托管配置，不启动。',
+                'start': '按保存的监听范围启动 llama-swap，不预加载模型。',
+                'stop': '停止本工具包 llama-swap，正在进行的请求可能中断。',
+                'enable-login': '设置下次用户登录启动 llama-swap，不立即启动；disable-login 可撤销。',
+                'disable-login': '取消下次登录启动，保留当前运行实例。',
+                'set-bind': '仅修改 llama-swap 访问范围并更新运行脚本，保留模型与端口。',
+            }
             if action in ('configure', 'set-bind'):
                 if action == 'set-bind' and args.proxy_bind is None:
                     raise ServiceError('set-bind 必须显式提供 --proxy-bind')
-                print(access_notice({'proxy_bind': args.proxy_bind or '0.0.0.0'}))
+                print(access_notice({'proxy_bind': args.proxy_bind or '127.0.0.1'}))
             elif action in ('start', 'enable-login'):
                 print(access_notice(manager.validate()))
             if not args.yes and not confirm(impacts[action]):
@@ -534,9 +640,16 @@ def main(argv=None):
                 return 2
             if action == 'configure':
                 if args.config:
-                    manager.import_config(args.config, args.port, args.proxy_bind or '0.0.0.0')
+                    manager.import_config(args.config, args.port, args.proxy_bind or '127.0.0.1')
                 elif args.model:
-                    manager.configure(args.model, args.server, args.port, args.backend_port or 18081, args.backend, args.proxy_bind or '0.0.0.0')
+                    manager.configure(
+                        args.model,
+                        args.server,
+                        args.port,
+                        args.backend_port or 18081,
+                        args.backend,
+                        args.proxy_bind or '127.0.0.1',
+                    )
                 else:
                     raise ServiceError('配置需要 --model 已有LLM路径 或 --config 安全配置路径')
             elif action == 'set-bind':

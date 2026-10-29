@@ -17,21 +17,34 @@ HELP
 }
 for arg in "$@"; do
   case "$arg" in
-    --remote) REMOTE=1 ;;
-    --help|-h) usage; exit 0 ;;
-    *) printf '未知参数：%s\n' "$arg" >&2; usage >&2; exit 2 ;;
+  --remote) REMOTE=1 ;;
+  --help | -h)
+    usage
+    exit 0
+    ;;
+  *)
+    printf '未知参数：%s\n' "$arg" >&2
+    usage >&2
+    exit 2
+    ;;
   esac
 done
-command -v python3 >/dev/null 2>&1 || { printf '需要已安装的 Python 3.10+。\n' >&2; exit 2; }
+command -v python3 >/dev/null 2>&1 || {
+  printf '需要已安装的 Python 3.10+。\n' >&2
+  exit 2
+}
 python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' || {
-  printf '需要 Python 3.10+。\n' >&2; exit 2;
+  printf '需要 Python 3.10+。\n' >&2
+  exit 2
 }
 if [ "$REMOTE" -eq 1 ]; then
   command -v node >/dev/null 2>&1 && command -v git >/dev/null 2>&1 || {
-    printf 'Remote 测试需要已安装的 Node.js 24+ 和 Git。\n' >&2; exit 2;
+    printf 'Remote 测试需要已安装的 Node.js 24+ 和 Git。\n' >&2
+    exit 2
   }
   node -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 24 ? 0 : 1)' || {
-    printf 'Remote 测试需要 Node.js 24+。\n' >&2; exit 2;
+    printf 'Remote 测试需要 Node.js 24+。\n' >&2
+    exit 2
   }
 fi
 # 隔离用户配置、缓存及 Git 签名/钩子配置，清理仅限本次创建的临时目录。

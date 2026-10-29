@@ -1,4 +1,5 @@
 """只读发现服务模型与同源 tokenizer；不猜测相近模型，不加载模型代码。"""
+
 import hashlib
 import json
 import os
@@ -31,7 +32,12 @@ def discover(url):
     result, seen = [], set()
     for row in rows:
         model = row.get('id') if isinstance(row, dict) else None
-        if not isinstance(model, str) or not model or model.startswith('-') or any(ord(c) < 32 or ord(c) == 127 for c in model):
+        if (
+            not isinstance(model, str)
+            or not model
+            or model.startswith('-')
+            or any(ord(c) < 32 or ord(c) == 127 for c in model)
+        ):
             raise ValueError('模型列表包含无效 id')
         if model in seen:
             raise ValueError('模型列表包含重复 id，无法安全选择')
@@ -66,9 +72,12 @@ def safe_json(path):
 
 def public_repo(value):
     # 两段本地分类路径不是公共仓库；也不接受点路径或父目录。
-    return (isinstance(value, str) and bool(REPO.fullmatch(value))
-            and value.split('/')[0] not in LOCAL_GROUPS
-            and all(part not in ('.', '..') for part in value.split('/')))
+    return (
+        isinstance(value, str)
+        and bool(REPO.fullmatch(value))
+        and value.split('/')[0] not in LOCAL_GROUPS
+        and all(part not in ('.', '..') for part in value.split('/'))
+    )
 
 
 def default_model_root():
@@ -107,9 +116,12 @@ def local_candidates(base):
                 if mapping['repo_id'] == model['repo_id']:
                     tokenizer = folder / 'tokenizer.json'
                     # 量化名称映射不仅凭 base_model：已有文件须与审计过的原版完全一致。
-                    identical = (tokenizer.is_file() and not tokenizer.is_symlink()
-                                 and tokenizer.stat().st_size <= 100_000_000
-                                 and hashlib.sha256(tokenizer.read_bytes()).hexdigest() == mapping['tokenizer_sha256'])
+                    identical = (
+                        tokenizer.is_file()
+                        and not tokenizer.is_symlink()
+                        and tokenizer.stat().st_size <= 100_000_000
+                        and hashlib.sha256(tokenizer.read_bytes()).hexdigest() == mapping['tokenizer_sha256']
+                    )
                     if not tokenizer.exists() or identical:
                         names.add(mapping['base_model'])
                         evidence.extend([mapping['source'], 'tokenizer SHA256: ' + mapping['tokenizer_sha256']])
@@ -147,8 +159,15 @@ def local_candidates(base):
         tokenizer = folder / 'tokenizer.json'
         has_tokenizer = tokenizer.is_file() and not tokenizer.is_symlink()
         if has_tokenizer or repos:
-            result.append({'path': str(folder), 'names': names, 'evidence': evidence,
-                           'has_tokenizer': has_tokenizer, 'repos': repos})
+            result.append(
+                {
+                    'path': str(folder),
+                    'names': names,
+                    'evidence': evidence,
+                    'has_tokenizer': has_tokenizer,
+                    'repos': repos,
+                }
+            )
     return result
 
 
@@ -187,15 +206,20 @@ def resolve_tokenizer(model, base):
         return {'kind': 'public', 'value': repo, 'evidence': ['catalog.json 精确目录与仓库映射: ' + repo]}
     if len(known_repos) > 1:
         raise ValueError('清单中模型来源不唯一，无法确定同源 tokenizer')
-    local_ids = [x for x in identities if x.startswith(('/', './', '../', '~/'))
-                 or x.split('/')[0] in LOCAL_GROUPS]
+    local_ids = [x for x in identities if x.startswith(('/', './', '../', '~/')) or x.split('/')[0] in LOCAL_GROUPS]
     if local_ids:
-        raise ValueError(f'未在模型目录 {base} 找到 {local_ids[0]} 的 tokenizer.json；请检查模型目录设置或补齐同模型文件，不会把本地路径当作 Hugging Face 仓库')
+        raise ValueError(
+            f'未在模型目录 {base} 找到 {local_ids[0]} 的 tokenizer.json；请检查模型目录设置或补齐同模型文件，不会把本地路径当作 Hugging Face 仓库'
+        )
     # 只有完整原仓库 ID 或服务明确提供的 root 可以作为公共来源；不去掉量化后缀猜原模型。
     repos = {x for x in identities if public_repo(x)}
     if len(repos) == 1:
         repo = repos.pop()
-        return {'kind': 'public', 'value': repo, 'evidence': ['由服务 /models 的 repo 形式标识推定，未独立验证模型身份: ' + repo]}
+        return {
+            'kind': 'public',
+            'value': repo,
+            'evidence': ['由服务 /models 的 repo 形式标识推定，未独立验证模型身份: ' + repo],
+        }
     if len(repos) > 1:
         raise ValueError('服务 id 与 root 指向不同公共仓库且无匹配本地 tokenizer，无法确定同源 tokenizer')
     if candidates:
@@ -210,4 +234,6 @@ def resolve_tokenizer(model, base):
             raise ValueError('选择无效，已返回')
         chosen = candidates[int(answer) - 1]
         return candidate_resolution(chosen, confirmed=True)
-    raise ValueError('未找到同源本地 tokenizer，服务也未提供完整原仓库 ID。请让服务 /models 返回原仓库 root，或把同模型 tokenizer.json 放入所选模型目录后重试；不使用通用 GPT2 近似。')
+    raise ValueError(
+        '未找到同源本地 tokenizer，服务也未提供完整原仓库 ID。请让服务 /models 返回原仓库 root，或把同模型 tokenizer.json 放入所选模型目录后重试；不使用通用 GPT2 近似。'
+    )

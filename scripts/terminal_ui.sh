@@ -10,13 +10,19 @@ ui_read_key() {
   [ "${BASH_VERSINFO[0]}" -lt 4 ] || escape_timeout=0.2
   UI_KEY=''
   IFS= read -rsn1 key || return 1
-  if [ "$key" != $'\033' ]; then UI_KEY="$key"; return 0; fi
+  if [ "$key" != $'\033' ]; then
+    UI_KEY="$key"
+    return 0
+  fi
   while :; do
     tail=''
     IFS= read -rsn1 -t "$escape_timeout" tail || :
     [ "$tail" = $'\033' ] || break
   done
-  if [ -z "$tail" ]; then UI_KEY=ESC; return 0; fi
+  if [ -z "$tail" ]; then
+    UI_KEY=ESC
+    return 0
+  fi
   UI_KEY=OTHER
   if [ "$tail" = '[' ] || [ "$tail" = O ]; then
     sequence=''
@@ -25,12 +31,12 @@ ui_read_key() {
       IFS= read -rsn1 -t 1 final || break
       [ "${#sequence}" -ge 64 ] || sequence="$sequence$final"
       case '@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~' in
-        *"$final"*) break ;;
+      *"$final"*) break ;;
       esac
     done
     case "$sequence" in
-      A) UI_KEY=UP ;; B) UI_KEY=DOWN ;;
-      C) UI_KEY=RIGHT ;; D) UI_KEY=LEFT ;;
+    A) UI_KEY=UP ;; B) UI_KEY=DOWN ;;
+    C) UI_KEY=RIGHT ;; D) UI_KEY=LEFT ;;
     esac
   fi
 }
@@ -38,20 +44,26 @@ ui_pause() {
   [ -t 0 ] && [ -t 1 ] || return 0
   printf '\nEnter / Esc / ← 返回菜单…'
   while ui_read_key; do
-    case "$UI_KEY" in ''|ESC|LEFT) printf '\n'; return 0 ;; esac
+    case "$UI_KEY" in '' | ESC | LEFT)
+      printf '\n'
+      return 0
+      ;;
+    esac
   done
 }
 # stty size 仅查询窗口尺寸，不改变终端状态；不可用时使用保守的 80×24。
 ui_dimensions() {
   local size rows columns
-  rows="${LINES:-24}"; columns="${COLUMNS:-80}"
+  rows="${LINES:-24}"
+  columns="${COLUMNS:-80}"
   size=$(stty size 2>/dev/null) || size=''
   if [ -n "$size" ]; then
-    read -r rows columns <<< "$size"
+    read -r rows columns <<<"$size"
   fi
-  case "$rows" in ''|*[!0-9]*|0) rows=24 ;; esac
-  case "$columns" in ''|*[!0-9]*|0) columns=80 ;; esac
-  UI_ROWS="$rows"; UI_COLUMNS="$columns"
+  case "$rows" in '' | *[!0-9]* | 0) rows=24 ;; esac
+  case "$columns" in '' | *[!0-9]* | 0) columns=80 ;; esac
+  UI_ROWS="$rows"
+  UI_COLUMNS="$columns"
 }
 ui_brand() {
   if [ "$UI_COLUMNS" -ge 100 ] && [ "$UI_ROWS" -ge 28 ]; then
@@ -78,13 +90,16 @@ ui_detail() {
   local text="$1" char code width used=0 limit=$((UI_COLUMNS - 4))
   printf '    \033[37m'
   while [ -n "$text" ]; do
-    char="${text:0:1}"; text="${text:1}"
+    char="${text:0:1}"
+    text="${text:1}"
     printf -v code '%d' "'$char"
     if [ "$code" -ge 0 ] && [ "$code" -lt 128 ]; then width=1; else width=2; fi
     if [ $((used + width)) -gt "$limit" ]; then
-      printf '\n    '; used=0
+      printf '\n    '
+      used=0
     fi
-    printf '%s' "$char"; used=$((used + width))
+    printf '%s' "$char"
+    used=$((used + width))
   done
   printf '\033[0m\n'
 }
@@ -93,13 +108,16 @@ ui_label() {
   local text="$1" char code width used=0 limit=$((UI_COLUMNS - 8))
   [ "$limit" -ge 2 ] || limit=2
   while [ -n "$text" ]; do
-    char="${text:0:1}"; text="${text:1}"
+    char="${text:0:1}"
+    text="${text:1}"
     printf -v code '%d' "'$char"
     if [ "$code" -ge 0 ] && [ "$code" -lt 128 ]; then width=1; else width=2; fi
     if [ $((used + width)) -gt "$limit" ]; then
-      printf '\n       '; used=0
+      printf '\n       '
+      used=0
     fi
-    printf '%s' "$char"; used=$((used + width))
+    printf '%s' "$char"
+    used=$((used + width))
   done
 }
 ui_render() {
@@ -118,7 +136,9 @@ ui_render() {
     printf '\nMac AI Kit · 本地 AI 创作工坊\n%s\n' "$title"
   fi
   while [ "$#" -gt 1 ]; do
-    label="$1"; description="$2"; shift 2
+    label="$1"
+    description="$2"
+    shift 2
     index=$((index + 1))
     if [ "$visual" -eq 1 ]; then
       if [ "$selected" -eq "$index" ]; then
@@ -158,24 +178,54 @@ ui_select() {
   while :; do
     ui_render "$title" "$selected" "$@"
     if [ ! -t 0 ] || [ ! -t 1 ]; then
-      IFS= read -r UI_CHOICE || { printf '输入已结束，退出。\n'; UI_CHOICE=0; }
+      IFS= read -r UI_CHOICE || {
+        printf '输入已结束，退出。\n'
+        UI_CHOICE=0
+      }
       return 0
     fi
-    ui_read_key || { UI_CHOICE=0; return 0; }
+    ui_read_key || {
+      UI_CHOICE=0
+      return 0
+    }
     key="$UI_KEY"
     case "$key" in
-      ESC) if [ "$UI_BACK_LABEL" != 退出 ]; then UI_CHOICE=0; return 0; fi ;;
-      LEFT) UI_CHOICE=0; return 0 ;;
-      UP) selected=$((selected - 1)); [ "$selected" -gt 0 ] || selected="$count" ;;
-      DOWN) selected=$((selected + 1)); [ "$selected" -le "$count" ] && [ "$selected" -ge 1 ] || selected=1 ;;
-      RIGHT) UI_CHOICE="$selected"; [ "$selected" -ne -1 ] || UI_CHOICE=h; return 0 ;;
-      '') UI_CHOICE="$selected"; [ "$selected" -ne -1 ] || UI_CHOICE=h; return 0 ;;
-      [1-9])
-        # 数字只定位，Enter 确认；不会把“1 + Enter”泄漏给下一级菜单。
-        [ "$key" -gt "$count" ] || selected="$key" ;;
-      0|q) selected=0 ;;
-      h) selected=-1 ;;
-      a|d|t|r|R) UI_CHOICE="$key"; return 0 ;;
+    ESC) if [ "$UI_BACK_LABEL" != 退出 ]; then
+      UI_CHOICE=0
+      return 0
+    fi ;;
+    LEFT)
+      UI_CHOICE=0
+      return 0
+      ;;
+    UP)
+      selected=$((selected - 1))
+      [ "$selected" -gt 0 ] || selected="$count"
+      ;;
+    DOWN)
+      selected=$((selected + 1))
+      [ "$selected" -le "$count" ] && [ "$selected" -ge 1 ] || selected=1
+      ;;
+    RIGHT)
+      UI_CHOICE="$selected"
+      [ "$selected" -ne -1 ] || UI_CHOICE=h
+      return 0
+      ;;
+    '')
+      UI_CHOICE="$selected"
+      [ "$selected" -ne -1 ] || UI_CHOICE=h
+      return 0
+      ;;
+    [1-9])
+      # 数字只定位，Enter 确认；不会把“1 + Enter”泄漏给下一级菜单。
+      [ "$key" -gt "$count" ] || selected="$key"
+      ;;
+    0 | q) selected=0 ;;
+    h) selected=-1 ;;
+    a | d | t | r | R)
+      UI_CHOICE="$key"
+      return 0
+      ;;
     esac
   done
 }

@@ -14,10 +14,16 @@ HELP
 }
 while (($#)); do
   case "$1" in
-    --dry-run) PREVIEW=1 ;;
-    --details) DETAILS=1 ;;
-    -h|--help) usage; exit 0 ;;
-    *) printf '未知参数：%s\n' "$1" >&2; exit 2 ;;
+  --dry-run) PREVIEW=1 ;;
+  --details) DETAILS=1 ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    printf '未知参数：%s\n' "$1" >&2
+    exit 2
+    ;;
   esac
   shift
 done
@@ -27,13 +33,28 @@ if ((DETAILS)); then
   printf '%s\n' '命令：uv tool install --python <已有 Python 3.10+ 的路径> --no-python-downloads --default-index https://pypi.org/simple modelscope-hub==0.4.0'
   printf '%s\n' '提供 ms-hub、modelscope-hub、ms、modelscope 四个命令；不覆盖已有命令。'
 fi
-((PREVIEW == 0)) || { printf '%s\n' '将安装模型下载工具。本次仅预览，未安装。'; exit 0; }
-[[ "$(uname -s)" == Darwin ]] || { printf '%s\n' '仅支持 macOS。未安装任何软件。' >&2; exit 1; }
-[[ "$(id -u)" != 0 ]] || { printf '%s\n' '请以普通用户运行，不要使用 sudo/root。' >&2; exit 1; }
-command -v uv >/dev/null 2>&1 || { printf '%s\n' '未找到 uv；请先运行基础环境安装脚本，或自行安装官方 uv。' >&2; exit 1; }
+((PREVIEW == 0)) || {
+  printf '%s\n' '将安装模型下载工具。本次仅预览，未安装。'
+  exit 0
+}
+[[ "$(uname -s)" == Darwin ]] || {
+  printf '%s\n' '仅支持 macOS。未安装任何软件。' >&2
+  exit 1
+}
+[[ "$(id -u)" != 0 ]] || {
+  printf '%s\n' '请以普通用户运行，不要使用 sudo/root。' >&2
+  exit 1
+}
+command -v uv >/dev/null 2>&1 || {
+  printf '%s\n' '未找到 uv；请先运行基础环境安装脚本，或自行安装官方 uv。' >&2
+  exit 1
+}
 BIN_DIR=$(uv tool dir --bin)
 TOOL_DIR=$(uv tool dir)
-[[ "$BIN_DIR" == /* && "$TOOL_DIR" == /* ]] || { printf '%s\n' 'uv 工具目录不是绝对路径；请检查 uv 配置。' >&2; exit 1; }
+[[ "$BIN_DIR" == /* && "$TOOL_DIR" == /* ]] || {
+  printf '%s\n' 'uv 工具目录不是绝对路径；请检查 uv 配置。' >&2
+  exit 1
+}
 # 不运行来源未知的已有命令；只报告位置，避免隐式升级或覆盖。
 for name in ms-hub modelscope-hub ms modelscope; do
   existing=$(command -v "$name" || true)
@@ -48,20 +69,30 @@ if [[ -e "$TOOL_DIR/modelscope-hub" || -L "$TOOL_DIR/modelscope-hub" ]]; then
   exit 1
 fi
 PYTHON=$(uv python find --no-python-downloads '>=3.10' 2>/dev/null || true)
-[[ -n "$PYTHON" && -x "$PYTHON" ]] || { printf '%s\n' '未找到本地 Python 3.10+；请先准备 Python，再重跑。此处不会自动下载 Python。' >&2; exit 1; }
+[[ -n "$PYTHON" && -x "$PYTHON" ]] || {
+  printf '%s\n' '未找到本地 Python 3.10+；请先准备 Python，再重跑。此处不会自动下载 Python。' >&2
+  exit 1
+}
 if ((DETAILS)); then printf 'Python：%s\n工具安装目录：%s\n命令目录：%s\n' "$PYTHON" "$TOOL_DIR" "$BIN_DIR"; fi
 if ((DETAILS)) && [[ -e "$ROOT/.venv-download" || -L "$ROOT/.venv-download" ]]; then
   printf '%s\n' '检测到旧 .venv-download，将完整保留，不迁移、不删除；新工具使用独立的 uv 环境。'
 fi
 printf '将安装模型下载工具，是否继续？[y/N] '
 read -r answer || exit 0
-case "$answer" in y|Y|yes|YES|是) ;; *) printf '%s\n' '已取消，未安装。'; exit 0 ;; esac
+case "$answer" in y | Y | yes | YES | 是) ;; *)
+  printf '%s\n' '已取消，未安装。'
+  exit 0
+  ;;
+esac
 if ((DETAILS)); then
   uv tool install --python "$PYTHON" --no-python-downloads --default-index https://pypi.org/simple 'modelscope-hub==0.4.0'
 else
   uv tool install --python "$PYTHON" --no-python-downloads --default-index https://pypi.org/simple 'modelscope-hub==0.4.0' --quiet
 fi
-[[ -x "$BIN_DIR/ms-hub" ]] || { printf '%s\n' 'uv 已结束，但未找到可执行的 ms-hub；请运行 uv tool list 检查，不能视为安装完成。' >&2; exit 1; }
+[[ -x "$BIN_DIR/ms-hub" ]] || {
+  printf '%s\n' 'uv 已结束，但未找到可执行的 ms-hub；请运行 uv tool list 检查，不能视为安装完成。' >&2
+  exit 1
+}
 printf '%s\n' '模型下载工具已安装。现在可以选择模型和下载位置。'
 if ((DETAILS)); then
   printf '下载命令：%s/ms-hub\n' "$BIN_DIR"

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """测试所选无认证接口，不管理服务生命周期。"""
+
 from __future__ import annotations
 
 import argparse
@@ -41,10 +42,18 @@ def endpoint(value: str) -> str:
         port = parsed.port
     except ValueError:
         raise ValueError('接口地址或端口无效') from None
-    if (parsed.scheme not in ('http', 'https') or not parsed.hostname
-            or parsed.username is not None or parsed.password is not None
-            or parsed.query or parsed.fragment or '?' in value or '#' in value
-            or '\\' in value or (port is not None and not 1 <= port <= 65535)):
+    if (
+        parsed.scheme not in ('http', 'https')
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+        or '?' in value
+        or '#' in value
+        or '\\' in value
+        or (port is not None and not 1 <= port <= 65535)
+    ):
         raise ValueError('仅支持无账号密码、查询参数或片段的 HTTP(S) 接口地址')
     return value.rstrip('/') + ('/v1' if parsed.path in ('', '/') else '')
 
@@ -93,24 +102,57 @@ def output_directory(value: str) -> Path:
     return path
 
 
-def command(uvx: str, url: str, model: str, tokenizer: str,
-            points: list[int], result: Path) -> list[str]:
-    return [uvx, '--no-config', '--from', PACKAGE, 'python', '-u', str(ROOT / 'scripts/benchmark_runner.py'),
-            '--base-url', url, '--model', model, '--tokenizer', tokenizer,
-            '--depth', *map(str, points), '--pp', '2048', '--tg', '480',
-            '--latency-mode', 'generation', '--skip-coherence',
-            '--save-result', str(result), '--runs', '1', '--format', 'csv',
-            '--exit-on-first-fail', '--concurrency', '1']
+def command(uvx: str, url: str, model: str, tokenizer: str, points: list[int], result: Path) -> list[str]:
+    return [
+        uvx,
+        '--no-config',
+        '--from',
+        PACKAGE,
+        'python',
+        '-u',
+        str(ROOT / 'scripts/benchmark_runner.py'),
+        '--base-url',
+        url,
+        '--model',
+        model,
+        '--tokenizer',
+        tokenizer,
+        '--depth',
+        *map(str, points),
+        '--pp',
+        '2048',
+        '--tg',
+        '480',
+        '--latency-mode',
+        'generation',
+        '--skip-coherence',
+        '--save-result',
+        str(result),
+        '--runs',
+        '1',
+        '--format',
+        'csv',
+        '--exit-on-first-fail',
+        '--concurrency',
+        '1',
+    ]
 
 
 def clean_environment(home: Path, cache: Path | None = None) -> dict[str, str]:
     # 不继承密钥、令牌、代理凭据、Python 注入变量或用户配置。
-    env = {key: os.environ[key] for key in ('PATH', 'LANG', 'LC_ALL', 'LC_CTYPE',
-                                           'SYSTEMROOT') if key in os.environ}
-    env.update(HOME=str(home), XDG_CONFIG_HOME=str(home / 'config'),
-               XDG_CACHE_HOME=str(home / 'cache'), HF_HOME=str(home / 'huggingface'),
-               HF_HUB_DISABLE_IMPLICIT_TOKEN='1', UV_NO_CONFIG='1',
-               UV_KEYRING_PROVIDER='disabled', NO_COLOR='1', TERM='dumb', PYTHONUNBUFFERED='1')
+    env = {key: os.environ[key] for key in ('PATH', 'LANG', 'LC_ALL', 'LC_CTYPE', 'SYSTEMROOT') if key in os.environ}
+    env.update(
+        HOME=str(home),
+        XDG_CONFIG_HOME=str(home / 'config'),
+        XDG_CACHE_HOME=str(home / 'cache'),
+        HF_HOME=str(home / 'huggingface'),
+        HF_HUB_DISABLE_IMPLICIT_TOKEN='1',
+        UV_NO_CONFIG='1',
+        UV_KEYRING_PROVIDER='disabled',
+        NO_COLOR='1',
+        TERM='dumb',
+        PYTHONUNBUFFERED='1',
+    )
     if cache is not None:
         env.update(UV_CACHE_DIR=str(cache / 'uv'), HF_HUB_CACHE=str(cache / 'hub'))
     return env
@@ -138,11 +180,13 @@ def summary(headers: list[str], rows: list[list[str]], points: list[int], model:
     records = [dict(zip(headers, row)) for row in rows]
     if any(record['model'] != model for record in records):
         raise ValueError('CSV 模型名称与本次请求不一致')
-    expected = {f'{kind}{size}' + (f' @ d{d}' if d else '')
-                for d in points for kind, size in [('pp', 2048), ('tg', 480)]}
+    expected = {
+        f'{kind}{size}' + (f' @ d{d}' if d else '') for d in points for kind, size in [('pp', 2048), ('tg', 480)]
+    }
     if len(records) != len(expected) or {r['test_name'] for r in records} != expected:
         raise ValueError('测试未完成：缺少预期的四档 pp/tg 结果，或出现额外结果')
     by_name = {r['test_name']: r for r in records}
+
     def metric(value: str, mandatory: bool = True) -> str:
         if not value and not mandatory:
             return '—'
@@ -150,12 +194,12 @@ def summary(headers: list[str], rows: list[list[str]], points: list[int], model:
         if not math.isfinite(number) or number <= 0:
             raise ValueError('结果包含无效或非正数指标')
         return f'{number:.2f}' if number < 1_000_000 else f'{number:.2e}'
+
     output = []
     for d in points:
         suffix = f' @ d{d}' if d else ''
         pp, tg = by_name['pp2048' + suffix], by_name['tg480' + suffix]
-        output.append((d, metric(pp['t_s_mean']), metric(tg['t_s_mean']),
-                       metric(pp['e2e_ttft_mean'], False)))
+        output.append((d, metric(pp['t_s_mean']), metric(tg['t_s_mean']), metric(pp['e2e_ttft_mean'], False)))
     return output
 
 
@@ -175,8 +219,7 @@ def table(records: list[tuple], width: int | None = None) -> str:
 
 
 def unreliable_logs(folder: Path) -> bool:
-    markers = (b"Falling back to 'gpt2' tokenizer as approximation",
-               b'assuming 1 token per chunk')
+    markers = (b"Falling back to 'gpt2' tokenizer as approximation", b'assuming 1 token per chunk')
     for name in ('stdout.log', 'stderr.log'):
         with (folder / name).open('rb') as log:
             for line in log:
@@ -198,6 +241,7 @@ def ask(label: str, default: str, validator):
 
 class LiveLog:
     """旁路读取原始日志，不用 PIPE 阻塞子进程；终端过滤可跨块的控制序列。"""
+
     def __init__(self, path, label):
         self.file = path.open('rb')
         self.label = label
@@ -243,8 +287,9 @@ class LiveLog:
         self.file.close()
 
 
-def run(uvx: str, url: str, model: str, tokenizer: str,
-        points: list[int], output: Path, resolution: dict | None = None) -> int:
+def run(
+    uvx: str, url: str, model: str, tokenizer: str, points: list[int], output: Path, resolution: dict | None = None
+) -> int:
     output_directory(str(output))
     output.mkdir(parents=True, exist_ok=True)
     cache = output_directory(str(output / '.llama-benchy-cache'))
@@ -265,17 +310,30 @@ def run(uvx: str, url: str, model: str, tokenizer: str,
             shutil.copyfileobj(src, dst)
         (snapshot / 'tokenizer.json').chmod(0o600)
         tokenizer = str(snapshot)
-    metadata = {'tool': PACKAGE, 'created_utc': stamp, 'base_url': url,
-                'model': model, 'tokenizer': tokenizer, 'tokenizer_original': original_tokenizer,
-                'tokenizer_resolution': resolution, 'depths': points,
-                'pp': 2048, 'tg': 480, 'runs': 1, 'latency_mode': 'generation',
-                'skip_coherence': True, 'csv': result.name}
+    metadata = {
+        'tool': PACKAGE,
+        'created_utc': stamp,
+        'base_url': url,
+        'model': model,
+        'tokenizer': tokenizer,
+        'tokenizer_original': original_tokenizer,
+        'tokenizer_resolution': resolution,
+        'depths': points,
+        'pp': 2048,
+        'tg': 480,
+        'runs': 1,
+        'latency_mode': 'generation',
+        'skip_coherence': True,
+        'csv': result.name,
+    }
     with (folder / 'run.json').open('x', encoding='utf-8') as handle:
         json.dump(metadata, handle, ensure_ascii=False, indent=2)
         handle.write('\n')
+
     def html_report(failed=False, warning=''):
         # 报告失败不掩盖原测试退出状态，原 CSV 与日志始终保留。
         from benchy_report import save_report
+
         try:
             headers, rows = read_csv(result)
             report = save_report(folder, headers, rows, metadata, failed=failed, warning=warning)
@@ -290,10 +348,15 @@ def run(uvx: str, url: str, model: str, tokenizer: str,
     tails = []
     try:
         with (folder / 'stdout.log').open('xb') as stdout, (folder / 'stderr.log').open('xb') as stderr:
-            process = subprocess.Popen(command(uvx, url, model, tokenizer, points, result),
-                                       cwd=folder, env=clean_environment(runtime, cache),
-                                       stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
-                                       start_new_session=True)
+            process = subprocess.Popen(
+                command(uvx, url, model, tokenizer, points, result),
+                cwd=folder,
+                env=clean_environment(runtime, cache),
+                stdin=subprocess.DEVNULL,
+                stdout=stdout,
+                stderr=stderr,
+                start_new_session=True,
+            )
             tails = [LiveLog(folder / 'stdout.log', 'stdout'), LiveLog(folder / 'stderr.log', 'stderr')]
             started = last = time.monotonic()
             while process.poll() is None:
@@ -310,6 +373,7 @@ def run(uvx: str, url: str, model: str, tokenizer: str,
         code = process.returncode
     except KeyboardInterrupt:
         import signal
+
         if process is not None and process.poll() is None:
             os.killpg(process.pid, signal.SIGTERM)
             try:
@@ -344,7 +408,9 @@ def run(uvx: str, url: str, model: str, tokenizer: str,
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='自动读取 /models 并匹配 tokenizer，测试所选接口并保存报告。', add_help=False)
+    parser = argparse.ArgumentParser(
+        description='自动读取 /models 并匹配 tokenizer，测试所选接口并保存报告。', add_help=False
+    )
     parser.add_argument('-h', '--help', action='help', help='显示帮助并退出')
     parser.add_argument('--root', default=str(Path.home() / 'AI'), help='托管服务所在工具目录，与服务管理 --root 一致')
     parser.add_argument('--base-url', help='显式指定接口，覆盖默认 11234 地址')
@@ -363,20 +429,30 @@ def main() -> int:
         return 1
     print('Llama benchmark')
     try:
-        url = endpoint(args.base_url) if args.base_url is not None else ask('接口地址', default_url(args.root, args.models_dir), endpoint)
+        url = (
+            endpoint(args.base_url)
+            if args.base_url is not None
+            else ask('接口地址', default_url(args.root, args.models_dir), endpoint)
+        )
         rows = discover(url)
         selected = choose(rows, '请选择测试模型：', lambda row: row['id'])
         model = selected['id']
         resolution = resolve_tokenizer(selected, args.models_dir)
         tokenizer = resolution['value']
         points = ask('最大背景深度', '200000', depths)
-        output = output_directory(args.output) if args.output is not None else ask('报告目录', str(default_report_root()), output_directory)
+        output = (
+            output_directory(args.output)
+            if args.output is not None
+            else ask('报告目录', str(default_report_root()), output_directory)
+        )
         print(f'\n接口：{url}\n模型：{model}')
         print(f'背景深度：{", ".join(map(str, points))}\npp 2048 · tg 480 · runs 1')
         print(f'名义总上下文至少 {points[-1] + 2528} token，另留模板余量。')
         print(f'报告目录：{output}')
         if resolution['kind'] == 'public':
-            print(f'本地未找到同源 tokenizer；将联网从 Hugging Face {tokenizer} 仅下载 tokenizer.json，不下载模型权重、不执行模型代码。')
+            print(
+                f'本地未找到同源 tokenizer；将联网从 Hugging Face {tokenizer} 仅下载 tokenizer.json，不下载模型权重、不执行模型代码。'
+            )
         return run(uvx, url, model, tokenizer, points, output, resolution)
     except (EOFError, KeyboardInterrupt):
         print('\n已取消。')

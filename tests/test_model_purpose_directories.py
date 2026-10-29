@@ -1,9 +1,11 @@
 """按用途分开音乐与语音目录，不改变上游组织名与文件格式。"""
+
 import json
 from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+
 
 class PurposeDirectories(unittest.TestCase):
     def setUp(self):
@@ -33,7 +35,10 @@ class PurposeDirectories(unittest.TestCase):
             with self.subTest(model=name):
                 model = enabled[name]
                 self.assertEqual(model.get('bundle_dir') or model['subdir'], target)
-                self.assertFalse(set(Path(target).parts) & {'mlx', 'mlx-serve', 'audio.cpp', 'audio.cpp-gguf', 'llama.cpp', 'stable-diffusion.cpp'})
+                self.assertFalse(
+                    set(Path(target).parts)
+                    & {'mlx', 'mlx-serve', 'audio.cpp', 'audio.cpp-gguf', 'llama.cpp', 'stable-diffusion.cpp'}
+                )
         self.assertFalse(self.models['music3-mlx-bf16']['enabled'])
         self.assertNotIn('subdir', self.models['music3-mlx-bf16'])
 
@@ -49,6 +54,7 @@ class PurposeDirectories(unittest.TestCase):
         self.assertEqual(self.models['yue2-audio-cpp-bf16']['repo_id'], 'audio-cpp/Yue2-3B-GGUF')
         self.assertEqual(self.models['h3-mlx-8bit']['subdir'], 'video/MiniMax-H3-FL2VA-MLX-Serve-8bit')
         self.assertFalse(any(m.get('subdir', '').startswith('audio-cpp/') for m in self.models.values()))
+
 
 if __name__ == '__main__':
     unittest.main()

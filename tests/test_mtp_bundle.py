@@ -1,4 +1,5 @@
 """MTP 补齐与无损头部适配回归；仅生成极小假权重，不联网、不推理。"""
+
 import contextlib
 import hashlib
 import importlib.util
@@ -24,14 +25,32 @@ class MTPBundleTests(unittest.TestCase):
         folder.mkdir(parents=True)
         header = {'__metadata__': {'format': 'mlx'}}
         for i in range(15):
-            header['fc.weight' if i == 0 else f'layers.0.test{i}.weight'] = {'dtype': 'BF16', 'shape': [1], 'data_offsets': [i * 2, i * 2 + 2]}
+            header['fc.weight' if i == 0 else f'layers.0.test{i}.weight'] = {
+                'dtype': 'BF16',
+                'shape': [1],
+                'data_offsets': [i * 2, i * 2 + 2],
+            }
         encoded = json.dumps(header).encode()
         payload = bytes(range(30))
         raw = struct.pack('<Q', len(encoded)) + encoded + payload
         (folder / 'model.safetensors').write_bytes(raw)
-        model = {'id': 'head', 'repo_id': 'example/head', 'subdir': 'llm/main/mtp', 'component': True, 'strict_download': True,
-                 'expected_files': {'model.safetensors': {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}},
-                 'local_adaptations': [{'kind': 'safetensors_prefix', 'source': 'model.safetensors', 'target': 'weights.safetensors', 'prefix': 'mtp.', 'tensor_count': 15}]}
+        model = {
+            'id': 'head',
+            'repo_id': 'example/head',
+            'subdir': 'llm/main/mtp',
+            'component': True,
+            'strict_download': True,
+            'expected_files': {'model.safetensors': {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}},
+            'local_adaptations': [
+                {
+                    'kind': 'safetensors_prefix',
+                    'source': 'model.safetensors',
+                    'target': 'weights.safetensors',
+                    'prefix': 'mtp.',
+                    'tensor_count': 15,
+                }
+            ],
+        }
         adapted_header = {('mtp.' + k if k != '__metadata__' else k): v for k, v in header.items()}
         encoded_new = json.dumps(adapted_header, ensure_ascii=False, separators=(',', ':')).encode()
         encoded_new += b' ' * ((-len(encoded_new)) % 8)
@@ -44,7 +63,10 @@ class MTPBundleTests(unittest.TestCase):
             model['final_only_adaptation'] = True
             m.adapt_local_weights(model, folder)
             (folder / 'model.safetensors').unlink()
-            with mock.patch.object(m, 'verify_file', side_effect=AssertionError('已有最终文件不能全量哈希')), mock.patch.object(m.subprocess, 'run') as run:
+            with (
+                mock.patch.object(m, 'verify_file', side_effect=AssertionError('已有最终文件不能全量哈希')),
+                mock.patch.object(m.subprocess, 'run') as run,
+            ):
                 row = m.final_mtp_preflight(model, folder)
                 self.assertEqual(row['additional'], 0)
                 self.assertTrue(m.download_final_mtp(None, model, folder, 1))
@@ -61,14 +83,18 @@ class MTPBundleTests(unittest.TestCase):
             size = model['generated_expected_files']['weights.safetensors']['bytes']
             self.assertEqual(row['additional'], size)
             self.assertEqual(row['peak_additional'], size + len(raw))
+
             def download(*args, **kwargs):
                 (m.staging_directory(model, folder) / 'model.safetensors').write_bytes(raw)
+
             with mock.patch.object(m.subprocess, 'run', side_effect=download):
                 m.download_final_mtp(Path('/fake/client'), model, folder, 1)
-            self.assertEqual(list(p.name for p in folder.iterdir() if not p.name.endswith('.publish-lock')), ['weights.safetensors'])
+            self.assertEqual(
+                list(p.name for p in folder.iterdir() if not p.name.endswith('.publish-lock')), ['weights.safetensors']
+            )
             self.assertFalse(m.staging_directory(model, folder).exists())
             final = (folder / 'weights.safetensors').read_bytes()
-            self.assertEqual(final[-len(payload):], payload)
+            self.assertEqual(final[-len(payload) :], payload)
 
     def test_final_only_resumes_verified_stage(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -118,12 +144,13 @@ class MTPBundleTests(unittest.TestCase):
             target = folder / 'weights.safetensors'
             raw = target.read_bytes()
             length = struct.unpack('<Q', raw[:8])[0]
-            actual = json.loads(raw[8:8+length])
-            self.assertEqual(raw[8+length:], payload)
+            actual = json.loads(raw[8 : 8 + length])
+            self.assertEqual(raw[8 + length :], payload)
             self.assertEqual(actual['__metadata__'], header['__metadata__'])
             for k, v in header.items():
-                if k != '__metadata__': self.assertEqual(actual['mtp.'+k], v)
-            self.assertEqual(len(actual)-1, 15)
+                if k != '__metadata__':
+                    self.assertEqual(actual['mtp.' + k], v)
+            self.assertEqual(len(actual) - 1, 15)
             self.assertEqual((folder / 'model.safetensors').read_bytes(), source)
             before = target.stat()
             self.assertEqual(m.adapt_local_weights(model, folder), result)
@@ -167,11 +194,13 @@ class MTPBundleTests(unittest.TestCase):
             model, folder, _, _ = self.fixture(Path(temp))
             target = folder / 'weights.safetensors'
             target.write_bytes(b'user content')
-            with self.assertRaises(ValueError): m.adapt_local_weights(model, folder)
+            with self.assertRaises(ValueError):
+                m.adapt_local_weights(model, folder)
             self.assertEqual(target.read_bytes(), b'user content')
             target.unlink()
             (folder / 'model.safetensors').write_bytes(b'bad')
-            with self.assertRaises(ValueError): m.adapt_local_weights(model, folder)
+            with self.assertRaises(ValueError):
+                m.adapt_local_weights(model, folder)
             self.assertFalse(target.exists())
 
     def test_symlink_source_target_and_parent_rejected(self):
@@ -180,30 +209,45 @@ class MTPBundleTests(unittest.TestCase):
                 base = Path(temp)
                 model, folder, _, _ = self.fixture(base)
                 if place == 'source':
-                    source = folder / 'model.safetensors'; source.rename(folder / 'real'); source.symlink_to('real')
+                    source = folder / 'model.safetensors'
+                    source.rename(folder / 'real')
+                    source.symlink_to('real')
                 elif place == 'target':
                     (folder / 'weights.safetensors').symlink_to('model.safetensors')
                 else:
-                    actual = folder.with_name('actual'); folder.rename(actual); folder.symlink_to('actual')
-                with self.assertRaises(ValueError): m.adapt_local_weights(model, folder)
+                    actual = folder.with_name('actual')
+                    folder.rename(actual)
+                    folder.symlink_to('actual')
+                with self.assertRaises(ValueError):
+                    m.adapt_local_weights(model, folder)
 
     def test_bad_relative_and_precision_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             model, folder, _, _ = self.fixture(Path(temp))
             model['local_adaptations'][0]['target'] = '../outside.safetensors'
-            with self.assertRaises(ValueError): m.adapt_local_weights(model, folder)
+            with self.assertRaises(ValueError):
+                m.adapt_local_weights(model, folder)
             self.assertFalse((folder.parent / 'outside.safetensors').exists())
             model['local_adaptations'][0]['target'] = 'weights.safetensors'
             raw = (folder / 'model.safetensors').read_bytes().replace(b'BF16', b'FP16')
             (folder / 'model.safetensors').write_bytes(raw)
             model['expected_files']['model.safetensors']['sha256'] = hashlib.sha256(raw).hexdigest()
-            with self.assertRaises(ValueError): m.adapt_local_weights(model, folder)
+            with self.assertRaises(ValueError):
+                m.adapt_local_weights(model, folder)
 
     def test_inventory_requires_generated_copy_without_hashing(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp)
             head, folder, _, _ = self.fixture(base)
-            main = {'id': 'main', 'repo_id': 'example/main', 'name': '主模型', 'subdir': 'llm/main', 'group': 'llm', 'requires': ['head'], 'expected_files': {'main.bin': {'bytes': 1, 'sha256': hashlib.sha256(b'm').hexdigest()}}}
+            main = {
+                'id': 'main',
+                'repo_id': 'example/main',
+                'name': '主模型',
+                'subdir': 'llm/main',
+                'group': 'llm',
+                'requires': ['head'],
+                'expected_files': {'main.bin': {'bytes': 1, 'sha256': hashlib.sha256(b'm').hexdigest()}},
+            }
             (folder.parent / 'main.bin').write_bytes(b'm')
             with mock.patch.object(m, 'digest_file', side_effect=AssertionError('不得读取权重')):
                 self.assertEqual(api.inspect_model(head, base)['state'], 'partial')
@@ -219,6 +263,7 @@ class MTPBundleTests(unittest.TestCase):
         self.assertIn('桌面 App', body)
         self.assertIn('注意力量化', body)
         self.assertIn('尚未在 Mac 实测', body)
+
 
 if __name__ == '__main__':
     unittest.main()

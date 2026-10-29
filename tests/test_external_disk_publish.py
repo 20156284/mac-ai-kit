@@ -1,4 +1,5 @@
 """模拟不支持硬链接的磁盘；不下载真实权重、不执行推理。"""
+
 import errno
 import hashlib
 import json
@@ -9,6 +10,7 @@ import unittest
 from unittest import mock
 import test_mtp_bundle
 import download_models as m
+
 
 class ExternalDiskTests(unittest.TestCase):
     fixture = test_mtp_bundle.MTPBundleTests.fixture
@@ -44,31 +46,42 @@ class ExternalDiskTests(unittest.TestCase):
     def test_reported_old_stage_identity_matches_exactly(self):
         model = next(item for item in m.load_catalog(m.ROOT / 'catalog.json') if item['id'] == 'qwen38-27b-mtp-bf16')
         old = Path('/Volumes/Samsung1TB/AI/models /llm/Qwen3.8-27B-bf16/mtp')
-        self.assertEqual(str(m.staging_identity(model, old)[0]),
-                         '/Volumes/Samsung1TB/AI/models /llm/Qwen3.8-27B-bf16/.h3-stage-f554d8d2e88dfda927bda0a7')
+        self.assertEqual(
+            str(m.staging_identity(model, old)[0]),
+            '/Volumes/Samsung1TB/AI/models /llm/Qwen3.8-27B-bf16/.h3-stage-f554d8d2e88dfda927bda0a7',
+        )
 
     def test_mtp_errno45_falls_back_without_network(self):
         with tempfile.TemporaryDirectory() as temp:
             model, folder, _, payload = self.fixture(Path(temp))
             stage = m.staging_directory(model, folder, create=True)
             (folder / 'model.safetensors').rename(stage / 'model.safetensors')
-            with mock.patch.object(m.os, 'link', side_effect=AssertionError('MTP 不得使用硬链接')) as link, mock.patch.object(m.subprocess, 'run') as run:
+            with (
+                mock.patch.object(m.os, 'link', side_effect=AssertionError('MTP 不得使用硬链接')) as link,
+                mock.patch.object(m.subprocess, 'run') as run,
+            ):
                 m.download_final_mtp(None, model, folder, 1)
                 run.assert_not_called()
                 link.assert_not_called()
-            self.assertEqual((folder / 'weights.safetensors').read_bytes()[-len(payload):], payload)
+            self.assertEqual((folder / 'weights.safetensors').read_bytes()[-len(payload) :], payload)
 
     def test_failure_keeps_source_and_tmp_then_reuses(self):
         with tempfile.TemporaryDirectory() as temp:
             model, folder, _, _ = self.fixture(Path(temp))
-            with mock.patch.object(m.os, 'link', side_effect=OSError(45, 'unsupported')), mock.patch.object(m, 'rename_exclusive', side_effect=PermissionError(errno.EACCES, 'denied')):
+            with (
+                mock.patch.object(m.os, 'link', side_effect=OSError(45, 'unsupported')),
+                mock.patch.object(m, 'rename_exclusive', side_effect=PermissionError(errno.EACCES, 'denied')),
+            ):
                 with self.assertRaises(OSError):
                     m.adapt_local_weights(model, folder)
             copies = list(folder.glob('.*.tmp'))
             self.assertEqual(len(copies), 1)
             self.assertTrue((folder / 'model.safetensors').exists())
             self.assertFalse((folder / 'weights.safetensors').exists())
-            with mock.patch.object(m.os, 'link', side_effect=OSError(45, 'unsupported')), mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('不重新生成已验证tmp')):
+            with (
+                mock.patch.object(m.os, 'link', side_effect=OSError(45, 'unsupported')),
+                mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('不重新生成已验证tmp')),
+            ):
                 m.adapt_local_weights(model, folder)
             self.assertFalse(copies[0].exists())
 
@@ -76,10 +89,15 @@ class ExternalDiskTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             model, folder, _, _ = self.fixture(Path(temp))
             real = m.rename_exclusive
+
             def race(src, dst):
                 dst.write_bytes(b'user')
                 real(src, dst)
-            with mock.patch.object(m.os, 'link', side_effect=OSError(45, 'unsupported')), mock.patch.object(m, 'rename_exclusive', side_effect=race):
+
+            with (
+                mock.patch.object(m.os, 'link', side_effect=OSError(45, 'unsupported')),
+                mock.patch.object(m, 'rename_exclusive', side_effect=race),
+            ):
                 with self.assertRaises(FileExistsError):
                     m.adapt_local_weights(model, folder)
             self.assertEqual((folder / 'weights.safetensors').read_bytes(), b'user')
@@ -93,7 +111,10 @@ class ExternalDiskTests(unittest.TestCase):
             (old / 'model.safetensors').rename(stage / 'model.safetensors')
             folder = root / 'models' / model['subdir']
             self.assertEqual(m.final_mtp_preflight(model, folder, old_folder=old)['network'], 0)
-            with mock.patch.object(m.os, 'link', side_effect=OSError(45, 'unsupported')), mock.patch.object(m.subprocess, 'run') as run:
+            with (
+                mock.patch.object(m.os, 'link', side_effect=OSError(45, 'unsupported')),
+                mock.patch.object(m.subprocess, 'run') as run,
+            ):
                 m.download_final_mtp(None, model, folder, 1, old_folder=old)
                 run.assert_not_called()
             self.assertTrue((stage / 'model.safetensors').exists())
@@ -105,103 +126,176 @@ class ExternalDiskTests(unittest.TestCase):
             source.write_bytes(b'checked')
             inode = source.stat().st_ino
             spec = {'bytes': 7, 'sha256': hashlib.sha256(b'checked').hexdigest()}
-            with mock.patch.object(m.os, 'link', side_effect=AssertionError('no link')), mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('no copy')), mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')):
+            with (
+                mock.patch.object(m.os, 'link', side_effect=AssertionError('no link')),
+                mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('no copy')),
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+            ):
                 m.publish_verified(source, target, spec, disposable=True)
                 self.assertFalse(source.exists())
                 self.assertEqual(target.stat().st_ino, inode)
                 source.write_bytes(b'checked')
-                with self.assertRaises(FileExistsError): m.publish_verified(source, target, spec, disposable=True)
+                with self.assertRaises(FileExistsError):
+                    m.publish_verified(source, target, spec, disposable=True)
                 self.assertEqual(target.read_bytes(), b'checked')
                 self.assertTrue(source.exists())
 
     def test_permission_error_does_not_fallback(self):
         with tempfile.TemporaryDirectory() as temp:
             model, folder, _, _ = self.fixture(Path(temp))
-            with mock.patch.object(m, 'rename_exclusive', side_effect=PermissionError(errno.EACCES, 'denied')), mock.patch.object(m.os, 'replace') as rename:
+            with (
+                mock.patch.object(m, 'rename_exclusive', side_effect=PermissionError(errno.EACCES, 'denied')),
+                mock.patch.object(m.os, 'replace') as rename,
+            ):
                 with self.assertRaises(PermissionError):
-                    m.publish_verified(folder / 'model.safetensors', folder / 'copy.safetensors', model['expected_files']['model.safetensors'], disposable=True)
+                    m.publish_verified(
+                        folder / 'model.safetensors',
+                        folder / 'copy.safetensors',
+                        model['expected_files']['model.safetensors'],
+                        disposable=True,
+                    )
                 rename.assert_not_called()
 
     def test_legacy_source_not_moved_or_copied(self):
         with tempfile.TemporaryDirectory() as temp:
             model, folder, _, _ = self.fixture(Path(temp))
             with self.assertRaisesRegex(ValueError, '旧目录文件保持原样'):
-                m.publish_verified(folder / 'model.safetensors', folder / 'copy.safetensors', model['expected_files']['model.safetensors'])
+                m.publish_verified(
+                    folder / 'model.safetensors',
+                    folder / 'copy.safetensors',
+                    model['expected_files']['model.safetensors'],
+                )
             self.assertTrue((folder / 'model.safetensors').exists())
             self.assertFalse((folder / 'copy.safetensors').exists())
 
     def test_cross_device_never_copies(self):
         with tempfile.TemporaryDirectory() as temp:
             source, target = Path(temp) / 'source', Path(temp) / 'target'
-            source.write_bytes(b'x'); spec = {'bytes': 1, 'sha256': hashlib.sha256(b'x').hexdigest()}
-            with mock.patch.object(m, 'rename_exclusive', side_effect=OSError(errno.EXDEV, 'cross device')), mock.patch.object(m.os, 'replace') as replace, mock.patch.object(m.shutil, 'copyfileobj') as copy:
-                with self.assertRaises(OSError): m.publish_verified(source, target, spec, disposable=True)
-                replace.assert_not_called(); copy.assert_not_called()
-            self.assertEqual(source.read_bytes(), b'x'); self.assertFalse(target.exists())
+            source.write_bytes(b'x')
+            spec = {'bytes': 1, 'sha256': hashlib.sha256(b'x').hexdigest()}
+            with (
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(errno.EXDEV, 'cross device')),
+                mock.patch.object(m.os, 'replace') as replace,
+                mock.patch.object(m.shutil, 'copyfileobj') as copy,
+            ):
+                with self.assertRaises(OSError):
+                    m.publish_verified(source, target, spec, disposable=True)
+                replace.assert_not_called()
+                copy.assert_not_called()
+            self.assertEqual(source.read_bytes(), b'x')
+            self.assertFalse(target.exists())
 
     def test_owned_placeholder_resumes_in_bundle_without_network(self):
         import json
         import test_incremental_download as inc
+
         with tempfile.TemporaryDirectory() as temp:
-            model = inc.model(); folder = Path(temp) / 'Main'; folder.mkdir()
+            model = inc.model()
+            folder = Path(temp) / 'Main'
+            folder.mkdir()
             stage = m.staging_directory(model, folder, create=True)
-            source = stage / 'weights.bin'; source.write_bytes(b'known model')
-            target = folder / 'weights.bin'; token = self.reservation_token; target.write_text(token)
+            source = stage / 'weights.bin'
+            source.write_bytes(b'known model')
+            target = folder / 'weights.bin'
+            token = self.reservation_token
+            target.write_text(token)
             st = target.stat()
-            (folder / '.weights.bin.publish-lock').write_text(json.dumps({'source': str(source.absolute()), 'identity': [st.st_dev, st.st_ino], 'token': token}))
-            with mock.patch.object(m.subprocess, 'run') as run, mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')):
+            (folder / '.weights.bin.publish-lock').write_text(
+                json.dumps({'source': str(source.absolute()), 'identity': [st.st_dev, st.st_ino], 'token': token})
+            )
+            with (
+                mock.patch.object(m.subprocess, 'run') as run,
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+            ):
                 m.download_verified_bundle(None, model, folder, 1, [], [model])
                 run.assert_not_called()
-            self.assertEqual(target.read_bytes(), b'known model'); self.assertFalse(stage.exists())
+            self.assertEqual(target.read_bytes(), b'known model')
+            self.assertFalse(stage.exists())
 
     def test_foreign_replacement_before_identity_check_is_preserved(self):
         with tempfile.TemporaryDirectory() as temp:
             source, target = Path(temp) / 'source', Path(temp) / 'target'
-            source.write_bytes(b'x'); spec = {'bytes': 1, 'sha256': hashlib.sha256(b'x').hexdigest()}
+            source.write_bytes(b'x')
+            spec = {'bytes': 1, 'sha256': hashlib.sha256(b'x').hexdigest()}
             dump = m.json.dump
+
             def replace_placeholder(record, stream):
                 dump(record, stream)
-                other = target.with_name('user-file'); other.write_bytes(b'user data'); other.replace(target)
-            with mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')), mock.patch.object(m.json, 'dump', side_effect=replace_placeholder):
-                with self.assertRaises(FileExistsError): m.publish_verified(source, target, spec, disposable=True)
-            self.assertEqual(target.read_bytes(), b'user data'); self.assertTrue(source.exists())
+                other = target.with_name('user-file')
+                other.write_bytes(b'user data')
+                other.replace(target)
+
+            with (
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+                mock.patch.object(m.json, 'dump', side_effect=replace_placeholder),
+            ):
+                with self.assertRaises(FileExistsError):
+                    m.publish_verified(source, target, spec, disposable=True)
+            self.assertEqual(target.read_bytes(), b'user data')
+            self.assertTrue(source.exists())
 
     def test_failed_plain_move_cleans_only_own_placeholder_and_retries(self):
         with tempfile.TemporaryDirectory() as temp:
             source, target = Path(temp) / 'source', Path(temp) / 'target'
-            source.write_bytes(b'x'); spec = {'bytes': 1, 'sha256': hashlib.sha256(b'x').hexdigest()}
-            with mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')), mock.patch.object(m.os, 'replace', side_effect=PermissionError(errno.EACCES, 'denied')):
-                with self.assertRaises(PermissionError): m.publish_verified(source, target, spec, disposable=True)
-            self.assertTrue(source.exists()); self.assertFalse(target.exists())
+            source.write_bytes(b'x')
+            spec = {'bytes': 1, 'sha256': hashlib.sha256(b'x').hexdigest()}
+            with (
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+                mock.patch.object(m.os, 'replace', side_effect=PermissionError(errno.EACCES, 'denied')),
+            ):
+                with self.assertRaises(PermissionError):
+                    m.publish_verified(source, target, spec, disposable=True)
+            self.assertTrue(source.exists())
+            self.assertFalse(target.exists())
             m.publish_verified(source, target, spec, disposable=True)
             self.assertEqual(target.read_bytes(), b'x')
 
     def test_v32_publish_leftover_moves_without_fetch_and_stage_cleans(self):
         import test_incremental_download as inc
+
         with tempfile.TemporaryDirectory() as temp:
-            model = inc.model(); folder = Path(temp) / 'Main'; folder.mkdir()
+            model = inc.model()
+            folder = Path(temp) / 'Main'
+            folder.mkdir()
             stage = m.staging_directory(model, folder, create=True)
             (stage / 'weights.bin').write_bytes(b'known model')
-            leftover = folder / ('.weights.bin.' + 'a' * 32 + '.publish'); leftover.write_bytes(b'known model')
+            leftover = folder / ('.weights.bin.' + 'a' * 32 + '.publish')
+            leftover.write_bytes(b'known model')
             inode = leftover.stat().st_ino
-            unknown = folder / '.weights.bin.unknown.publish'; unknown.write_bytes(b'user data')
-            with mock.patch.object(m.subprocess, 'run') as run, mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('no copy')):
+            unknown = folder / '.weights.bin.unknown.publish'
+            unknown.write_bytes(b'user data')
+            with (
+                mock.patch.object(m.subprocess, 'run') as run,
+                mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('no copy')),
+            ):
                 m.download_verified_bundle(None, model, folder, 1, [], [model])
                 run.assert_not_called()
             self.assertEqual((folder / 'weights.bin').stat().st_ino, inode)
-            self.assertFalse(stage.exists()); self.assertFalse(leftover.exists())
+            self.assertFalse(stage.exists())
+            self.assertFalse(leftover.exists())
             self.assertEqual(unknown.read_bytes(), b'user data')
 
     def test_mtp_owned_reservation_is_not_mistaken_for_bad_final(self):
         import json
+
         with tempfile.TemporaryDirectory() as temp:
             model, folder, _, _ = self.fixture(Path(temp))
             with mock.patch.object(m, 'publish_verified', side_effect=PermissionError('stop before move')):
-                with self.assertRaises(PermissionError): m.adapt_local_weights(model, folder)
+                with self.assertRaises(PermissionError):
+                    m.adapt_local_weights(model, folder)
             temporary = next(folder.glob('.*.tmp'))
-            target = folder / 'weights.safetensors'; target.write_text(self.reservation_token)
+            target = folder / 'weights.safetensors'
+            target.write_text(self.reservation_token)
             st = target.stat()
-            (folder / '.weights.safetensors.publish-lock').write_text(json.dumps({'source': str(temporary.absolute()), 'identity': [st.st_dev, st.st_ino], 'token': self.reservation_token}))
+            (folder / '.weights.safetensors.publish-lock').write_text(
+                json.dumps(
+                    {
+                        'source': str(temporary.absolute()),
+                        'identity': [st.st_dev, st.st_ino],
+                        'token': self.reservation_token,
+                    }
+                )
+            )
             self.assertFalse(m.final_mtp_present(model, folder))
             m.adapt_local_weights(model, folder)
             self.assertFalse(temporary.exists())
@@ -216,12 +310,14 @@ class ExternalDiskTests(unittest.TestCase):
             spec = {'bytes': len(payload), 'sha256': hashlib.sha256(payload).hexdigest()}
             fstat, lstat = self.unstable_reservation_stats(target)
             replace = m.os.replace
-            with mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')), \
-                    mock.patch.object(m.os, 'fstat', side_effect=fstat), \
-                    mock.patch.object(Path, 'lstat', lstat), \
-                    mock.patch.object(m.os, 'link', side_effect=AssertionError('no hard link')), \
-                    mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('no copy')), \
-                    mock.patch.object(m.os, 'replace', wraps=replace) as move:
+            with (
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+                mock.patch.object(m.os, 'fstat', side_effect=fstat),
+                mock.patch.object(Path, 'lstat', lstat),
+                mock.patch.object(m.os, 'link', side_effect=AssertionError('no hard link')),
+                mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('no copy')),
+                mock.patch.object(m.os, 'replace', wraps=replace) as move,
+            ):
                 m.publish_verified(source, target, spec, disposable=True)
                 move.assert_called_once_with(source, target)
             self.assertEqual(target.read_bytes(), payload)
@@ -235,10 +331,12 @@ class ExternalDiskTests(unittest.TestCase):
             source.write_bytes(b'x')
             spec = {'bytes': 1, 'sha256': hashlib.sha256(b'x').hexdigest()}
             fstat, lstat = self.unstable_reservation_stats(target)
-            with mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')), \
-                    mock.patch.object(m.os, 'fstat', side_effect=fstat), \
-                    mock.patch.object(Path, 'lstat', lstat), \
-                    mock.patch.object(m.os, 'replace', side_effect=PermissionError(errno.EACCES, 'denied')):
+            with (
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+                mock.patch.object(m.os, 'fstat', side_effect=fstat),
+                mock.patch.object(Path, 'lstat', lstat),
+                mock.patch.object(m.os, 'replace', side_effect=PermissionError(errno.EACCES, 'denied')),
+            ):
                 with self.assertRaises(PermissionError):
                     m.publish_verified(source, target, spec, disposable=True)
             self.assertEqual(source.read_bytes(), b'x')
@@ -260,19 +358,23 @@ class ExternalDiskTests(unittest.TestCase):
                 stream.flush()
                 raise KeyboardInterrupt('interrupted after writing reservation')
 
-            with mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')), \
-                    mock.patch.object(m.json, 'dump', side_effect=interrupt_after_record), \
-                    mock.patch.object(m.os, 'replace') as move:
+            with (
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+                mock.patch.object(m.json, 'dump', side_effect=interrupt_after_record),
+                mock.patch.object(m.os, 'replace') as move,
+            ):
                 with self.assertRaises(KeyboardInterrupt):
                     m.publish_verified(source, target, spec, disposable=True)
                 move.assert_not_called()
             self.assertEqual(source.read_bytes(), b'checked')
             self.assertTrue(m.owned_publication_reservation(target, source))
             fstat, lstat = self.unstable_reservation_stats(target)
-            with mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')), \
-                    mock.patch.object(m.os, 'fstat', side_effect=fstat), \
-                    mock.patch.object(Path, 'lstat', lstat), \
-                    mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('no copy')):
+            with (
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+                mock.patch.object(m.os, 'fstat', side_effect=fstat),
+                mock.patch.object(Path, 'lstat', lstat),
+                mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('no copy')),
+            ):
                 m.publish_verified(source, target, spec, disposable=True)
             self.assertFalse(source.exists())
             self.assertEqual(target.read_bytes(), b'checked')
@@ -300,9 +402,11 @@ class ExternalDiskTests(unittest.TestCase):
                         target.mkdir()
                         (target / 'user-file').write_bytes(b'user data')
 
-                with mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')), \
-                        mock.patch.object(m.json, 'dump', side_effect=change_target), \
-                        mock.patch.object(m.os, 'replace') as move:
+                with (
+                    mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+                    mock.patch.object(m.json, 'dump', side_effect=change_target),
+                    mock.patch.object(m.os, 'replace') as move,
+                ):
                     with self.assertRaises(FileExistsError):
                         m.publish_verified(source, target, spec, disposable=True)
                     move.assert_not_called()
@@ -317,9 +421,20 @@ class ExternalDiskTests(unittest.TestCase):
                     self.assertEqual((target / 'user-file').read_bytes(), b'user data')
 
     def test_unowned_record_or_token_never_allows_recovery(self):
-        for corruption in ('different_source', 'relative_source', 'missing_source', 'short_token',
-                           'uppercase_token', 'wrong_prefix', 'extra_newline', 'different_token',
-                           'list_record', 'null_record', 'integer_token', 'malformed_json'):
+        for corruption in (
+            'different_source',
+            'relative_source',
+            'missing_source',
+            'short_token',
+            'uppercase_token',
+            'wrong_prefix',
+            'extra_newline',
+            'different_token',
+            'list_record',
+            'null_record',
+            'integer_token',
+            'malformed_json',
+        ):
             with self.subTest(corruption=corruption), tempfile.TemporaryDirectory() as temp:
                 source, target = Path(temp) / 'source', Path(temp) / 'target'
                 source.write_bytes(b'x')
@@ -354,8 +469,7 @@ class ExternalDiskTests(unittest.TestCase):
                 lock.write_text('{"source":' if corruption == 'malformed_json' else json.dumps(record))
                 before = target.read_bytes()
                 self.assertFalse(m.owned_publication_reservation(target, source))
-                with mock.patch.object(m, 'rename_exclusive') as rename, \
-                        mock.patch.object(m.os, 'replace') as move:
+                with mock.patch.object(m, 'rename_exclusive') as rename, mock.patch.object(m.os, 'replace') as move:
                     with self.assertRaises((FileExistsError, ValueError)):
                         m.publish_verified(source, target, spec, disposable=True)
                     rename.assert_not_called()
@@ -378,17 +492,27 @@ class ExternalDiskTests(unittest.TestCase):
             target.write_text(self.reservation_token)
             st = target.stat()
             lock = folder / '.weights.safetensors.publish-lock'
-            lock.write_text(json.dumps({'source': str(temporary.absolute()),
-                                        'identity': [st.st_dev + 12345, st.st_ino + 67890],
-                                        'token': self.reservation_token}))
+            lock.write_text(
+                json.dumps(
+                    {
+                        'source': str(temporary.absolute()),
+                        'identity': [st.st_dev + 12345, st.st_ino + 67890],
+                        'token': self.reservation_token,
+                    }
+                )
+            )
             reservation_before, lock_before = target.read_bytes(), lock.read_bytes()
             fstat, lstat = self.unstable_reservation_stats(target)
-            with mock.patch.object(m.os, 'fstat', side_effect=fstat), \
-                    mock.patch.object(Path, 'lstat', lstat), \
-                    mock.patch.object(m.subprocess, 'run', side_effect=AssertionError('no download')) as download, \
-                    mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('reuse verified adaptation')) as copy, \
-                    mock.patch.object(m.os, 'link', side_effect=AssertionError('no hard link')) as link, \
-                    mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')):
+            with (
+                mock.patch.object(m.os, 'fstat', side_effect=fstat),
+                mock.patch.object(Path, 'lstat', lstat),
+                mock.patch.object(m.subprocess, 'run', side_effect=AssertionError('no download')) as download,
+                mock.patch.object(
+                    m.shutil, 'copyfileobj', side_effect=AssertionError('reuse verified adaptation')
+                ) as copy,
+                mock.patch.object(m.os, 'link', side_effect=AssertionError('no hard link')) as link,
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+            ):
                 self.assertFalse(m.final_mtp_present(model, folder))
                 row = m.final_mtp_preflight(model, folder)
                 for key in ('network', 'additional', 'generated', 'peak_additional'):
@@ -402,7 +526,7 @@ class ExternalDiskTests(unittest.TestCase):
                 copy.assert_not_called()
                 link.assert_not_called()
             self.assertEqual(target.read_bytes(), expected)
-            self.assertEqual(target.read_bytes()[-len(payload):], payload)
+            self.assertEqual(target.read_bytes()[-len(payload) :], payload)
             self.assertEqual(target.stat().st_ino, inode)
             self.assertFalse(temporary.exists())
             self.assertFalse(stage.exists())
@@ -424,11 +548,14 @@ class ExternalDiskTests(unittest.TestCase):
             unrelated.write_bytes(expected)
             target.write_text(self.reservation_token)
             lock = folder / '.weights.safetensors.publish-lock'
-            lock.write_text(json.dumps({'source': str(recorded.absolute()),
-                                        'identity': [-1, -1], 'token': self.reservation_token}))
-            with mock.patch.object(m.subprocess, 'run', side_effect=AssertionError('no download')), \
-                    mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('no adaptation copy')), \
-                    mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')):
+            lock.write_text(
+                json.dumps({'source': str(recorded.absolute()), 'identity': [-1, -1], 'token': self.reservation_token})
+            )
+            with (
+                mock.patch.object(m.subprocess, 'run', side_effect=AssertionError('no download')),
+                mock.patch.object(m.shutil, 'copyfileobj', side_effect=AssertionError('no adaptation copy')),
+                mock.patch.object(m, 'rename_exclusive', side_effect=OSError(45, 'unsupported')),
+            ):
                 self.assertTrue(m.final_mtp_preflight(model, folder)['pending_publish'])
                 m.download_final_mtp(None, model, folder, 1)
             self.assertFalse(recorded.exists())

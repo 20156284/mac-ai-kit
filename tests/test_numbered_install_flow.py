@@ -1,4 +1,5 @@
 """使用真实选择器与无操作安装替身，检查选择和取消路径。"""
+
 import os
 from pathlib import Path
 import shlex
@@ -10,19 +11,31 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 
+
 class NumberedFlowTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.work = Path(self.temp.name)
-        self.home = self.work / 'home'; self.home.mkdir()
-        self.kit = self.work / 'kit'; self.kit.mkdir()
-        self.scripts = self.kit / 'scripts'; self.scripts.mkdir()
-        self.bin = self.work / 'bin'; self.bin.mkdir()
+        self.home = self.work / 'home'
+        self.home.mkdir()
+        self.kit = self.work / 'kit'
+        self.kit.mkdir()
+        self.scripts = self.kit / 'scripts'
+        self.scripts.mkdir()
+        self.bin = self.work / 'bin'
+        self.bin.mkdir()
         self.log = self.work / 'mutations'
         for name in ('start.sh', 'catalog.json'):
             shutil.copy2(ROOT / name, self.kit / name)
-        for name in ('setup_ai_capabilities.sh', 'download_models.py', 'terminal_ui.sh', 'path_validation.sh', 'path_validation.py', 'model_directory.sh'):
+        for name in (
+            'setup_ai_capabilities.sh',
+            'download_models.py',
+            'terminal_ui.sh',
+            'path_validation.sh',
+            'path_validation.py',
+            'model_directory.sh',
+        ):
             shutil.copy2(ROOT / 'scripts' / name, self.scripts / name)
         for name in ('dirname', 'cat', 'mkdir', 'mktemp', 'mv', 'rm'):
             (self.bin / name).symlink_to(shutil.which(name))
@@ -30,18 +43,31 @@ class NumberedFlowTests(unittest.TestCase):
             self.write(self.scripts / name, 'echo MUTATION >> "$LOG"; exit 90')
         self.write(self.bin / 'python3', 'exit 1')
         (self.scripts / 'api_inventory.py').write_text('raise RuntimeError("UNEXPECTED API WRITE")')
-        self.env = dict(os.environ, HOME=str(self.home), XDG_CONFIG_HOME=str(self.home / '.config'), PATH=str(self.bin), LOG=str(self.log))
+        self.env = dict(
+            os.environ,
+            HOME=str(self.home),
+            XDG_CONFIG_HOME=str(self.home / '.config'),
+            PATH=str(self.bin),
+            LOG=str(self.log),
+        )
 
     def write(self, path, body):
-        path.write_text('#!/bin/bash\n' + body + '\n'); path.chmod(0o755)
+        path.write_text('#!/bin/bash\n' + body + '\n')
+        path.chmod(0o755)
 
     def run_entry(self, data='', args=()):
-        return subprocess.run(['/bin/bash', str(self.kit / 'start.sh'), *args], input=data,
-                              env=self.env, text=True, capture_output=True)
+        return subprocess.run(
+            ['/bin/bash', str(self.kit / 'start.sh'), *args], input=data, env=self.env, text=True, capture_output=True
+        )
 
     def choose(self, data='', *args):
-        return subprocess.run(['/bin/bash', str(self.scripts / 'setup_ai_capabilities.sh'), '--choose-only', *args],
-                              input=data, env=self.env, text=True, capture_output=True)
+        return subprocess.run(
+            ['/bin/bash', str(self.scripts / 'setup_ai_capabilities.sh'), '--choose-only', *args],
+            input=data,
+            env=self.env,
+            text=True,
+            capture_output=True,
+        )
 
     def test_numbers_spaces_commas_deduplicate_and_invalid_retry(self):
         result = self.choose('99\n1, 2 5 1\n')
@@ -57,8 +83,13 @@ class NumberedFlowTests(unittest.TestCase):
         for number in range(1, 7):
             (self.work / str(number)).write_text('')
         for value in ('*', '[1-6]'):
-            result = subprocess.run(['/bin/bash', str(self.scripts / 'setup_ai_capabilities.sh'), '--choose-only', '--select', value],
-                                    cwd=self.work, env=self.env, text=True, capture_output=True)
+            result = subprocess.run(
+                ['/bin/bash', str(self.scripts / 'setup_ai_capabilities.sh'), '--choose-only', '--select', value],
+                cwd=self.work,
+                env=self.env,
+                text=True,
+                capture_output=True,
+            )
             self.assertEqual(result.returncode, 2, result.stdout)
             self.assertEqual(result.stdout, '')
             self.assertFalse(self.log.exists())
@@ -97,9 +128,11 @@ class NumberedFlowTests(unittest.TestCase):
 
     def test_read_only_found_missing_and_broken_states_do_not_run_tools(self):
         self.write(self.bin / 'llama-server', 'echo EXECUTED >> "$LOG"')
-        bins = self.home / 'AI/bin'; bins.mkdir(parents=True)
+        bins = self.home / 'AI/bin'
+        bins.mkdir(parents=True)
         (bins / 'sd-server').symlink_to('/nonexistent/kit-test')
-        app = self.home / 'Applications/MLX-Serve.app'; app.mkdir(parents=True)
+        app = self.home / 'Applications/MLX-Serve.app'
+        app.mkdir(parents=True)
         result = self.choose('0\n')
         self.assertIn('App 已找到，保留', result.stderr)
         self.assertIn('已找到，保留（未运行核验）', result.stderr)
@@ -108,8 +141,19 @@ class NumberedFlowTests(unittest.TestCase):
         self.assertFalse(self.log.exists())
 
     def test_confirmation_discloses_settings_dependencies_without_mutation(self):
-        result = subprocess.run(['/bin/bash', str(self.scripts / 'setup_ai_capabilities.sh'), '--confirm-only', '--models-dir', str(self.home / 'models')],
-                                input='1 6\nn\n', env=self.env, text=True, capture_output=True)
+        result = subprocess.run(
+            [
+                '/bin/bash',
+                str(self.scripts / 'setup_ai_capabilities.sh'),
+                '--confirm-only',
+                '--models-dir',
+                str(self.home / 'models'),
+            ],
+            input='1 6\nn\n',
+            env=self.env,
+            text=True,
+            capture_output=True,
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, '')
         for text in ('备份旧设置', 'Node/工具链', 'shell PATH', '[y/N]'):
@@ -135,9 +179,13 @@ class NumberedFlowTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertFalse(self.log.exists())
             self.assertFalse((self.home / 'AI').exists())
-            self.assertEqual((self.home / '.config/mac-ai-kit/model-directory').read_text().strip(), str(self.home / 'AI/models'))
+            self.assertEqual(
+                (self.home / '.config/mac-ai-kit/model-directory').read_text().strip(), str(self.home / 'AI/models')
+            )
         result = self.run_entry(args=('download', '--select', 'invalid'))
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.log.exists())
 
-if __name__ == '__main__': unittest.main()
+
+if __name__ == '__main__':
+    unittest.main()

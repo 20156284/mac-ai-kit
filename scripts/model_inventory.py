@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """只读查看清单内本地模型；只检查文件元数据，不读取权重、不联网。"""
+
 from path_validation import validate_model_root
 
 import argparse
@@ -55,7 +56,11 @@ def h3_files(base, models):
     if len(selected) != 2:
         return {}, []
     a, b = [verified_specs(m) for m in selected]
-    common = {name: spec for name, spec in a.items() if name in b and spec['bytes'] == b[name]['bytes'] and spec['sha256'].lower() == b[name]['sha256'].lower()}
+    common = {
+        name: spec
+        for name, spec in a.items()
+        if name in b and spec['bytes'] == b[name]['bytes'] and spec['sha256'].lower() == b[name]['sha256'].lower()
+    }
     folders = list(dict.fromkeys([model_folder(base, m) for m in selected] + [base / LEGACY]))
     paths = {folder / name: (spec['bytes'], spec['sha256']) for folder in folders for name, spec in common.items()}
     return paths, [(folder / name, spec, name) for name, spec in common.items() for folder in folders]
@@ -127,7 +132,9 @@ def display(base, rows, estimate, count):
         print(f"{index}. {name} | {row['bytes'] / 10**9:.2f} GB | {row['state']}")
     print('体积为清单文件逻辑大小；文件齐全仅核对大小，未验证推理。')
     if estimate:
-        print(f'合并建议：H3 有 {count} 个疑似重复文件，校验后最多可去重 {estimate / 10**9:.2f} GB（非实际磁盘释放量）。')
+        print(
+            f'合并建议：H3 有 {count} 个疑似重复文件，校验后最多可去重 {estimate / 10**9:.2f} GB（非实际磁盘释放量）。'
+        )
         print('选择“合并 H3 共享权重”后执行校验与合并。')
     else:
         print('合并建议：未发现可合并的独立 H3 副本（已共享文件不重复计算）。')

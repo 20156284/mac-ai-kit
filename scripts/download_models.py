@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """采用 MIT 许可证的 macOS 魔搭模型下载规划器；不执行推理或自动安装。"""
+
 import argparse
 import datetime as dt
 import ctypes
@@ -47,6 +48,7 @@ def readiness_label(model):
 
 class ChineseArgumentParser(argparse.ArgumentParser):
     """本工具专用中文帮助与参数错误；保持标准参数解析行为。"""
+
     def __init__(self, *args, **kwargs):
         kwargs['add_help'] = False
         super().__init__(*args, **kwargs)
@@ -79,7 +81,11 @@ class ChineseArgumentParser(argparse.ArgumentParser):
 
 
 def safe_repo(value):
-    if not isinstance(value, str) or len(value.split('/')) != 2 or not all(SAFE.fullmatch(p) and p not in ('.', '..') for p in value.split('/')):
+    if (
+        not isinstance(value, str)
+        or len(value.split('/')) != 2
+        or not all(SAFE.fullmatch(p) and p not in ('.', '..') for p in value.split('/'))
+    ):
         raise ValueError('仓库必须是 ModelScope owner/name，不接受 URL 或命令参数')
     return value
 
@@ -113,7 +119,9 @@ def load_catalog(path):
             safe_repo(model['repo_id'])
         for field in ('include', 'exclude'):
             patterns = model.get(field, [])
-            if not isinstance(patterns, list) or any(not isinstance(p, str) or not p or p.startswith('-') or '\x00' in p for p in patterns):
+            if not isinstance(patterns, list) or any(
+                not isinstance(p, str) or not p or p.startswith('-') or '\x00' in p for p in patterns
+            ):
                 raise ValueError('include/exclude 必须是安全的字符串数组')
     return data['models']
 
@@ -122,6 +130,7 @@ def expand_dependencies(selected, models):
     """解析无环依赖图，保持先依赖、后所选模型的顺序。"""
     by_id = {m['id']: m for m in models}
     resolved, visiting, visited = [], set(), set()
+
     def visit(model):
         key = model['id']
         if key in visiting:
@@ -141,6 +150,7 @@ def expand_dependencies(selected, models):
         visiting.remove(key)
         visited.add(key)
         resolved.append(model)
+
     for model in selected:
         visit(model)
     return resolved
@@ -150,7 +160,19 @@ def command(cli, model, dest, workers):
     rev = model.get('revision') or 'master'
     if not isinstance(rev, str) or not rev or rev.startswith('-') or '\x00' in rev:
         raise ValueError('revision 无效')
-    args = [str(cli), 'download', safe_repo(model['repo_id']), '--repo-type', 'model', '--revision', rev, '--local-dir', str(dest), '--max-workers', str(workers)]
+    args = [
+        str(cli),
+        'download',
+        safe_repo(model['repo_id']),
+        '--repo-type',
+        'model',
+        '--revision',
+        rev,
+        '--local-dir',
+        str(dest),
+        '--max-workers',
+        str(workers),
+    ]
     for field in ('include', 'exclude'):
         for value in model.get(field, []):
             args.extend(['--' + field, value])
@@ -194,9 +216,12 @@ def validate_plan_targets(plans):
     for model, target, _ in plans:
         if target in owners:
             previous = owners[target]
-            if (reuse_family(model) or reuse_family(previous) or
-                    model['repo_id'] != previous['repo_id'] or
-                    (model.get('revision') or 'master') != (previous.get('revision') or 'master')):
+            if (
+                reuse_family(model)
+                or reuse_family(previous)
+                or model['repo_id'] != previous['repo_id']
+                or (model.get('revision') or 'master') != (previous.get('revision') or 'master')
+            ):
                 raise ValueError('多个不同仓库或版本的下载目录重复')
         owners[target] = model
 
@@ -211,14 +236,27 @@ def verified_specs(model):
     if not expected:
         raise ValueError('可复用模型必须有完整的 expected_files 核查快照')
     for relative, spec in expected.items():
-        if not isinstance(relative, str) or '\\' in relative or any(p in ('', '.', '..') for p in relative.split('/')) or Path(relative).is_absolute():
+        if (
+            not isinstance(relative, str)
+            or '\\' in relative
+            or any(p in ('', '.', '..') for p in relative.split('/'))
+            or Path(relative).is_absolute()
+        ):
             raise ValueError('核查文件路径不安全：' + str(relative))
         if not all(re.fullmatch(r'[A-Za-z0-9_.-]+', p) for p in relative.split('/')):
             raise ValueError('核查文件路径不安全：' + relative)
-        if not isinstance(spec.get('bytes'), int) or spec['bytes'] < 0 or not re.fullmatch('[a-fA-F0-9]{64}', spec.get('sha256', '')):
+        if (
+            not isinstance(spec.get('bytes'), int)
+            or spec['bytes'] < 0
+            or not re.fullmatch('[a-fA-F0-9]{64}', spec.get('sha256', ''))
+        ):
             raise ValueError('可复用文件必须有 bytes 和完整 SHA256：' + relative)
         for version in spec.get('compatible_versions', []):
-            if not isinstance(version.get('bytes'), int) or version['bytes'] < 0 or not re.fullmatch('[a-fA-F0-9]{64}', version.get('sha256', '')):
+            if (
+                not isinstance(version.get('bytes'), int)
+                or version['bytes'] < 0
+                or not re.fullmatch('[a-fA-F0-9]{64}', version.get('sha256', ''))
+            ):
                 raise ValueError('兼容版本必须有 bytes 和完整 SHA256：' + relative)
     return expected
 
@@ -284,9 +322,24 @@ def automatic_model_sources(base, model):
     names = {repo, repo.split('/')[1], model['id']}
     if canonical.name not in ('mtp', 'dependencies', 'licenses'):
         names.add(canonical.name)
-    parents = {'', str(canonical.parent), 'llm', 'audio', 'music', 'images', 'video',
-               'mlx', 'mlx-serve', 'audio-cpp', 'audio.cpp', 'sd-cpp',
-               'audio/audio-cpp', 'audio/audio.cpp', 'music/audio-cpp', 'music/audio.cpp'}
+    parents = {
+        '',
+        str(canonical.parent),
+        'llm',
+        'audio',
+        'music',
+        'images',
+        'video',
+        'mlx',
+        'mlx-serve',
+        'audio-cpp',
+        'audio.cpp',
+        'sd-cpp',
+        'audio/audio-cpp',
+        'audio/audio.cpp',
+        'music/audio-cpp',
+        'music/audio.cpp',
+    }
     relatives = {str(canonical)} | {str(Path(parent) / name) for parent in parents for name in names}
     sources = [base] if base.is_dir() else []
     relatives.add(str(canonical.parent))
@@ -359,8 +412,7 @@ def verified_publish_leftover(target, spec):
         return None
     pattern = re.compile(r'^\.' + re.escape(target.name) + r'\.[0-9a-f]{32}\.publish$')
     for item in sorted(target.parent.iterdir()):
-        if (pattern.fullmatch(item.name) and not item.is_symlink()
-                and item.is_file() and verify_file(item, spec)):
+        if pattern.fullmatch(item.name) and not item.is_symlink() and item.is_file() and verify_file(item, spec):
             return item
     return None
 
@@ -371,8 +423,7 @@ def publication_reservation_matches(target, source, record):
         if not isinstance(record, dict) or record.get('source') != str(source.absolute()):
             return False
         token = record.get('token')
-        if not isinstance(token, str) or not re.fullmatch(
-                r'Mac AI Kit publication reservation [0-9a-f]{32}', token):
+        if not isinstance(token, str) or not re.fullmatch(r'Mac AI Kit publication reservation [0-9a-f]{32}', token):
             return False
         no_link_parents(target.parent)
         expected = token.encode('ascii')
@@ -382,8 +433,11 @@ def publication_reservation_matches(target, source, record):
         flags = os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0)
         with os.fdopen(os.open(target, flags), 'rb') as stream:
             current = os.fstat(stream.fileno())
-            return (stat.S_ISREG(current.st_mode) and current.st_size == len(expected)
-                    and stream.read(len(expected) + 1) == expected)
+            return (
+                stat.S_ISREG(current.st_mode)
+                and current.st_size == len(expected)
+                and stream.read(len(expected) + 1) == expected
+            )
     except (OSError, ValueError, UnicodeError):
         return False
 
@@ -421,7 +475,10 @@ def move_verified_portable(source, target, spec):
         except OSError as exc:
             if exc.errno not in {errno.ENOTSUP, errno.EOPNOTSUPP, errno.ENOSYS, errno.EINVAL, 45}:
                 raise
-            print('此磁盘不支持独占重命名；使用同盘移动，不复制、不保留第二份。移动期间请勿让其他程序修改此模型目录。', flush=True)
+            print(
+                '此磁盘不支持独占重命名；使用同盘移动，不复制、不保留第二份。移动期间请勿让其他程序修改此模型目录。',
+                flush=True,
+            )
             token = 'Mac AI Kit publication reservation ' + uuid.uuid4().hex
             # xb 同时排除既有文件和悬空符号链接；绝不把旧目标当作占位文件。
             with target.open('xb') as placeholder:
@@ -429,8 +486,11 @@ def move_verified_portable(source, target, spec):
                 placeholder.flush()
                 os.fsync(placeholder.fileno())
             record = {'source': str(source.absolute()), 'token': token, 'version': 2}
-            journal.seek(0); journal.truncate()
-            json.dump(record, journal); journal.flush(); os.fsync(journal.fileno())
+            journal.seek(0)
+            journal.truncate()
+            json.dump(record, journal)
+            journal.flush()
+            os.fsync(journal.fileno())
             if not publication_reservation_matches(target, source, record):
                 raise FileExistsError(errno.EEXIST, '发布占位检查未通过，停止移动；保留暂存文件', str(target))
             try:
@@ -440,7 +500,9 @@ def move_verified_portable(source, target, spec):
                 if publication_reservation_matches(target, source, record):
                     target.unlink()
                 raise
-        journal.seek(0); journal.truncate(); journal.flush()
+        journal.seek(0)
+        journal.truncate()
+        journal.flush()
     verify_file(target, spec, strict=True)
 
 
@@ -452,7 +514,9 @@ def publish_verified(source, target, spec, disposable=False):
         raise ValueError('发布来源不能是链接：' + str(source))
     verify_file(source, spec, strict=True)
     if not disposable:
-        raise ValueError('旧目录文件保持原样；不自动移动、硬链接或复制。请选择已有模型目录，或明确迁移后重试：' + str(source))
+        raise ValueError(
+            '旧目录文件保持原样；不自动移动、硬链接或复制。请选择已有模型目录，或明确迁移后重试：' + str(source)
+        )
     move_verified_portable(source, target, spec)
 
 
@@ -490,9 +554,13 @@ def final_mtp_present(model, folder):
                     raise ValueError('无效发布记录')
                 temporary = Path(record['source'])
                 pattern = r'^\.' + re.escape(path.name) + r'\.[0-9a-f]{32}\.tmp$'
-                if (temporary.parent == path.parent.absolute() and re.fullmatch(pattern, temporary.name)
-                        and temporary.is_file() and not temporary.is_symlink()
-                        and owned_publication_reservation(path, temporary)):
+                if (
+                    temporary.parent == path.parent.absolute()
+                    and re.fullmatch(pattern, temporary.name)
+                    and temporary.is_file()
+                    and not temporary.is_symlink()
+                    and owned_publication_reservation(path, temporary)
+                ):
                     return False
             except (OSError, ValueError):
                 pass
@@ -504,17 +572,36 @@ def final_mtp_present(model, folder):
 def verified_adaptation_temporary(target, spec):
     """只接管精确命名、完整散列匹配的适配临时文件，优先匹配发布日志。"""
     pattern = re.compile(r'^\.' + re.escape(target.name) + r'\.[0-9a-f]{32}\.tmp$')
-    candidates = sorted((item for item in target.parent.iterdir()
-                         if pattern.fullmatch(item.name) and not item.is_symlink()
-                         and item.is_file() and verify_file(item, spec))) if target.parent.is_dir() else []
-    return next((item for item in candidates if owned_publication_reservation(target, item)),
-                candidates[0] if candidates else None)
+    candidates = (
+        sorted(
+            (
+                item
+                for item in target.parent.iterdir()
+                if pattern.fullmatch(item.name) and not item.is_symlink() and item.is_file() and verify_file(item, spec)
+            )
+        )
+        if target.parent.is_dir()
+        else []
+    )
+    return next(
+        (item for item in candidates if owned_publication_reservation(target, item)),
+        candidates[0] if candidates else None,
+    )
 
 
 def final_mtp_preflight(model, folder, verify_sources=True, old_folder=None):
     """仅保留最终 MTP；下载原件只存在于有所有权标记的暂存目录。"""
-    row = {'id': model['id'], 'existing': 0, 'network': 0, 'generated': 0,
-           'additional': 0, 'peak_additional': 0, 'reuse': {}, 'local_reuse': {}, 'missing': []}
+    row = {
+        'id': model['id'],
+        'existing': 0,
+        'network': 0,
+        'generated': 0,
+        'additional': 0,
+        'peak_additional': 0,
+        'reuse': {},
+        'local_reuse': {},
+        'missing': [],
+    }
     final_bytes = sum(x['bytes'] for x in model['generated_expected_files'].values())
     if verify_sources and final_mtp_present(model, folder):
         row['existing'] = final_bytes
@@ -546,8 +633,9 @@ def final_mtp_preflight(model, folder, verify_sources=True, old_folder=None):
     target = target_path(folder, rule['target'])
     # 有已下载原件及精确格式 tmp 时，只读计算输出散列并校验；避免重试重复预算空间。
     if found and target.parent.is_dir() and any(target.parent.glob('.' + target.name + '.*.tmp')):
-        results = adapt_local_weights(model, folder, verify_only=True,
-                                      source_overrides={name: row['local_reuse'][name]})
+        results = adapt_local_weights(
+            model, folder, verify_only=True, source_overrides={name: row['local_reuse'][name]}
+        )
         if results and verified_adaptation_temporary(target, results[0]) is not None:
             row['existing'] = final_bytes
             row['generated'] = row['additional'] = row['peak_additional'] = 0
@@ -558,8 +646,10 @@ def final_mtp_preflight(model, folder, verify_sources=True, old_folder=None):
 def download_final_mtp(cli, model, folder, workers, old_folder=None):
     """补齐单份最终 MTP；旧版用户原件不删除，新暂存原件成功后清理。"""
     if final_mtp_present(model, folder):
-        return [dict(spec, path=name, check='路径与大小检查；未做推理验证')
-                for name, spec in model['generated_expected_files'].items()]
+        return [
+            dict(spec, path=name, check='路径与大小检查；未做推理验证')
+            for name, spec in model['generated_expected_files'].items()
+        ]
     row = final_mtp_preflight(model, folder, old_folder=old_folder)
     folder.mkdir(parents=True, exist_ok=True)
     rule = model['local_adaptations'][0]
@@ -592,10 +682,21 @@ def download_preflight(plans, sources, models, verify_sources=True, base=None, r
                 elif not row['additional']:
                     print('MTP：已下载，无需重复下载。', flush=True)
                 else:
-                    print(f"MTP：需补 {row['network'] / 10**9:.2f} GB；最终新增 {row['additional'] / 10**9:.2f} GB。", flush=True)
+                    print(
+                        f"MTP：需补 {row['network'] / 10**9:.2f} GB；最终新增 {row['additional'] / 10**9:.2f} GB。",
+                        flush=True,
+                    )
             continue
-        row = {'id': model['id'], 'existing': 0, 'network': 0, 'generated': 0,
-               'additional': 0, 'reuse': {}, 'local_reuse': {}, 'missing': []}
+        row = {
+            'id': model['id'],
+            'existing': 0,
+            'network': 0,
+            'generated': 0,
+            'additional': 0,
+            'reuse': {},
+            'local_reuse': {},
+            'missing': [],
+        }
         if not model.get('expected_files'):
             row['network'] = row['additional'] = float(model.get('disk_gb') or 0) * 10**9
             rows.append(row)
@@ -603,7 +704,11 @@ def download_preflight(plans, sources, models, verify_sources=True, base=None, r
         specs = verified_specs(model)
         family = reuse_family(model)
         reusable = reusable_files(model, folder, sources, models) if family and sources and verify_sources else {}
-        legacy = local_reusable_files(model, folder, automatic_model_sources(base, model), report) if base is not None and verify_sources else {}
+        legacy = (
+            local_reusable_files(model, folder, automatic_model_sources(base, model), report)
+            if base is not None and verify_sources
+            else {}
+        )
         row['reuse'], row['local_reuse'] = reusable, legacy
         stage = staging_directory(model, folder) if verify_sources else None
         available = dict(reusable, **legacy)
@@ -615,7 +720,9 @@ def download_preflight(plans, sources, models, verify_sources=True, base=None, r
             present = False
             if verify_sources:
                 no_link_parents(path.parent)
-                if (path.exists() or path.is_symlink()) and not owned_publication_reservation(path, verified_publish_leftover(path, spec) or stage / name):
+                if (path.exists() or path.is_symlink()) and not owned_publication_reservation(
+                    path, verified_publish_leftover(path, spec) or stage / name
+                ):
                     if path.is_symlink() and not family:
                         raise ValueError('普通模型已有文件是链接；不跟随、不覆盖：' + str(path))
                     if report and spec['bytes'] >= 100 * 10**6:
@@ -641,10 +748,18 @@ def download_preflight(plans, sources, models, verify_sources=True, base=None, r
                 source = available.get(rule['source'])
                 if source is None:
                     raise ValueError('已有兼容文件但缺少可核验的源文件；不覆盖：' + str(target))
-                adapt_local_weights(dict(model, local_adaptations=[rule]), folder,
-                                    verify_only=True, source_overrides={rule['source']: source})
+                adapt_local_weights(
+                    dict(model, local_adaptations=[rule]),
+                    folder,
+                    verify_only=True,
+                    source_overrides={rule['source']: source},
+                )
             else:
-                row['generated'] += model.get('generated_expected_files', {}).get(rule['target'], {}).get('bytes', specs[rule['source']]['bytes'] + 4096)
+                row['generated'] += (
+                    model.get('generated_expected_files', {})
+                    .get(rule['target'], {})
+                    .get('bytes', specs[rule['source']]['bytes'] + 4096)
+                )
         row['additional'] = row['network'] + row['generated']
         rows.append(row)
         if report:
@@ -652,8 +767,11 @@ def download_preflight(plans, sources, models, verify_sources=True, base=None, r
             if row['network'] == 0 and row['generated'] == 0:
                 print(f'{label}：已下载，无需重复下载。', flush=True)
             else:
-                print(f"{label}：已有 {row['existing'] / 10**9:.2f} GB；需补 {row['network'] / 10**9:.2f} GB"
-                      + (f"；兼容副本 {row['generated'] / 10**9:.2f} GB" if row['generated'] else ''), flush=True)
+                print(
+                    f"{label}：已有 {row['existing'] / 10**9:.2f} GB；需补 {row['network'] / 10**9:.2f} GB"
+                    + (f"；兼容副本 {row['generated'] / 10**9:.2f} GB" if row['generated'] else ''),
+                    flush=True,
+                )
             if model.get('runtime') == 'audio.cpp' and row['missing'] and 0 < row['network'] < 10**7:
                 print(f"仅补组件 {row['network'] / 10**6:.2f} MB：" + '、'.join(row['missing']), flush=True)
             for parent in sorted({str(path.parent) for path in legacy.values()}):
@@ -663,8 +781,7 @@ def download_preflight(plans, sources, models, verify_sources=True, base=None, r
 
 def prioritize_existing_h3(plans):
     """仅重排 H3 槽位，已有版本优先；不扰动其他模型的依赖顺序。"""
-    existing = iter(sorted((p for p in plans if is_h3_reuse_model(p[0])),
-                           key=lambda p: not p[1].is_dir()))
+    existing = iter(sorted((p for p in plans if is_h3_reuse_model(p[0])), key=lambda p: not p[1].is_dir()))
     return [next(existing) if is_h3_reuse_model(p[0]) else p for p in plans]
 
 
@@ -686,7 +803,11 @@ def reusable_files(model, folder, sources, models):
             raise ValueError('复用源目录不存在或不是目录：' + str(source))
         if resolved_source.is_relative_to(resolved_target) or resolved_target.is_relative_to(resolved_source):
             raise ValueError('复用源与目标不能相互嵌套')
-        if resolved_source == reserved_stage or resolved_source.is_relative_to(reserved_stage) or reserved_stage.is_relative_to(resolved_source):
+        if (
+            resolved_source == reserved_stage
+            or resolved_source.is_relative_to(reserved_stage)
+            or reserved_stage.is_relative_to(resolved_source)
+        ):
             raise ValueError('复用源不能与受控暂存目录重叠')
         candidates = {}
         for peer in peers:
@@ -718,8 +839,12 @@ def reusable_files(model, folder, sources, models):
 
 
 def staging_identity(model, folder):
-    identity = {'repo_id': model['repo_id'], 'revision': model.get('revision') or 'master',
-                'destination': str(folder.absolute()), 'expected_files': verified_specs(model)}
+    identity = {
+        'repo_id': model['repo_id'],
+        'revision': model.get('revision') or 'master',
+        'destination': str(folder.absolute()),
+        'expected_files': verified_specs(model),
+    }
     text = json.dumps(identity, sort_keys=True, ensure_ascii=False)
     key = hashlib.sha256(text.encode()).hexdigest()[:24]
     return folder.parent / ('.h3-stage-' + key), text
@@ -756,17 +881,25 @@ def download_verified_bundle(cli, model, folder, workers, sources, models, local
     for name, spec in expected.items():
         path = folder / name
         no_link_parents(path.parent)
-        if (path.exists() or path.is_symlink()) and not owned_publication_reservation(path, verified_publish_leftover(path, spec) or stage / name):
+        if (path.exists() or path.is_symlink()) and not owned_publication_reservation(
+            path, verified_publish_leftover(path, spec) or stage / name
+        ):
             if path.is_symlink() and not reuse_family(model):
                 raise ValueError('普通模型已有文件是链接；不跟随、不覆盖：' + str(path))
             verify_file(path, spec, strict=True)
             present.add(name)
     legacy_pending = [name for name in local_reuse if name not in present]
     if legacy_pending:
-        raise ValueError('旧目录文件保持原样；不自动移动、硬链接或复制。请选择已有模型目录，或明确迁移后重试：' + str(local_reuse[legacy_pending[0]]))
+        raise ValueError(
+            '旧目录文件保持原样；不自动移动、硬链接或复制。请选择已有模型目录，或明确迁移后重试：'
+            + str(local_reuse[legacy_pending[0]])
+        )
     missing = [name for name in expected if name not in present and name not in reuse]
     reused_bytes = sum(expected[name]['bytes'] for name in reuse if name not in present)
-    print(f"已验证复用 {len(set(reuse) - present)} 个文件（{reused_bytes / 10**9:.2f} GB）；待补齐 {len(missing)} 个文件（已验证暂存文件不重复下载）。", flush=True)
+    print(
+        f"已验证复用 {len(set(reuse) - present)} 个文件（{reused_bytes / 10**9:.2f} GB）；待补齐 {len(missing)} 个文件（已验证暂存文件不重复下载）。",
+        flush=True,
+    )
     folder.mkdir(parents=True, exist_ok=True)
     stage = staging_directory(model, folder, create=True)
     leftovers = {name: verified_publish_leftover(folder / name, expected[name]) for name in missing}
@@ -801,7 +934,9 @@ def download_verified_bundle(cli, model, folder, workers, sources, models, local
                     dest.symlink_to(os.path.relpath(source, dest.parent))
                 except OSError as exc:
                     if exc.errno in {errno.ENOTSUP, errno.EOPNOTSUPP, 45}:
-                        raise ValueError('此磁盘不支持 H3 去重需要的符号链接；源文件已保留，不以复制冒充节省空间。') from exc
+                        raise ValueError(
+                            '此磁盘不支持 H3 去重需要的符号链接；源文件已保留，不以复制冒充节省空间。'
+                        ) from exc
                     raise
         else:
             publish_verified(leftovers[name] or stage / name, dest, expected[name], disposable=True)
@@ -882,7 +1017,9 @@ def adapt_local_weights(model, folder, verify_only=False, source_overrides=None)
             if declared and declared.get('bytes') != output_spec['bytes']:
                 raise ValueError('兼容权重大小与核查记录不符')
             temporary = verified_adaptation_temporary(target, output_spec)
-            if (target.exists() or target.is_symlink()) and not (temporary and owned_publication_reservation(target, temporary)):
+            if (target.exists() or target.is_symlink()) and not (
+                temporary and owned_publication_reservation(target, temporary)
+            ):
                 if target.is_symlink():
                     raise ValueError('兼容权重目标不能是链接')
                 verify_file(target, output_spec, strict=True)
@@ -901,8 +1038,15 @@ def adapt_local_weights(model, folder, verify_only=False, source_overrides=None)
                 publish_verified(temporary, target, output_spec, disposable=True)
                 if temporary.exists():
                     temporary.unlink()
-            results.append(dict(output_spec, path=rule['target'], source=rule['source'],
-                                source_sha256=specs[rule['source']]['sha256'], adaptation='仅添加 mtp. 键名前缀；张量数据不变'))
+            results.append(
+                dict(
+                    output_spec,
+                    path=rule['target'],
+                    source=rule['source'],
+                    source_sha256=specs[rule['source']]['sha256'],
+                    adaptation='仅添加 mtp. 键名前缀；张量数据不变',
+                )
+            )
     return results
 
 
@@ -944,7 +1088,11 @@ def visible_models(models):
 def bundle_size(selected, models):
     """汇总去重后的组件大小；未知大小不当作零。"""
     expanded = expand_dependencies(selected, models)
-    known = sum((0 if m.get('final_only_adaptation') else float(m.get('disk_gb') or 0)) + sum(x['bytes'] for x in m.get('generated_expected_files', {}).values()) / 10**9 for m in expanded)
+    known = sum(
+        (0 if m.get('final_only_adaptation') else float(m.get('disk_gb') or 0))
+        + sum(x['bytes'] for x in m.get('generated_expected_files', {}).values()) / 10**9
+        for m in expanded
+    )
     unknown = any(m.get('disk_gb') is None for m in expanded)
     if unknown:
         return f'至少 {known:.2f} GB，部分未知' if known else '大小未知'
@@ -971,33 +1119,69 @@ def print_menu(models, base, details=False):
                 print('     最终目录：' + str(bundle_target(base, model)))
                 print(f"     id：{model['id']} | 精度：{model.get('precision', '未知')} | {readiness_label(model)}")
                 for component in expand_dependencies([model], models):
-                    print(f"     组件：{component['id']} | {component['repo_id']} -> {target_path(base, component.get('subdir') or component['repo_id'])}")
+                    print(
+                        f"     组件：{component['id']} | {component['repo_id']} -> {target_path(base, component.get('subdir') or component['repo_id'])}"
+                    )
                 print('     ' + model.get('notes', ''))
     print('\n输入编号可多选；高级命令 models --details 可查看技术详情。')
 
 
 def main(argv=None):
-    p = ChineseArgumentParser(description='仅下载模型；--list / --dry-run 不安装、不联网、不写文件。', epilog='目录提示：在工具包根目录运行 python3 scripts/download_models.py --list；若已进入 scripts 目录，请运行 python3 download_models.py --list。')
-    p.add_argument('--catalog', metavar='清单文件', type=Path, default=ROOT / 'catalog.json', help='模型清单文件，默认使用工具包根目录下的 catalog.json')
+    p = ChineseArgumentParser(
+        description='仅下载模型；--list / --dry-run 不安装、不联网、不写文件。',
+        epilog='目录提示：在工具包根目录运行 python3 scripts/download_models.py --list；若已进入 scripts 目录，请运行 python3 download_models.py --list。',
+    )
+    p.add_argument(
+        '--catalog',
+        metavar='清单文件',
+        type=Path,
+        default=ROOT / 'catalog.json',
+        help='模型清单文件，默认使用工具包根目录下的 catalog.json',
+    )
     paths = p.add_mutually_exclusive_group()
-    paths.add_argument('--models-dir', metavar='模型根目录', dest='dest', type=str, help='独立共享模型根目录，默认 ~/AI/models；不写入应用或工具包配置')
+    paths.add_argument(
+        '--models-dir',
+        metavar='模型根目录',
+        dest='dest',
+        type=str,
+        help='独立共享模型根目录，默认 ~/AI/models；不写入应用或工具包配置',
+    )
     paths.add_argument('--dest', metavar='模型根目录', type=str, help='兼容旧版：与 --models-dir 等价，不可同时指定')
     p.add_argument('--choose-only', action='store_true', help=argparse.SUPPRESS)
     p.add_argument('--select', metavar='序号或模型ID', help='清单中的模型 id，逗号分隔；不默认下载全部')
     p.add_argument('--repo', metavar='所有者/仓库名', help='自定义 ModelScope owner/name，与 --select 互斥')
-    p.add_argument('--include', metavar='文件模式', action='append', default=[], help='仅 --repo：可重复指定的文件通配模式')
-    p.add_argument('--exclude', metavar='排除模式', action='append', default=[], help='仅 --repo：可重复指定的排除通配模式')
+    p.add_argument(
+        '--include', metavar='文件模式', action='append', default=[], help='仅 --repo：可重复指定的文件通配模式'
+    )
+    p.add_argument(
+        '--exclude', metavar='排除模式', action='append', default=[], help='仅 --repo：可重复指定的排除通配模式'
+    )
     p.add_argument('--revision', metavar='版本标识', default='master', help='仅用于 --repo；可使用固定提交标识')
     p.add_argument('--list', action='store_true', help='离线列出模型与说明，不下载、不写文件')
     p.add_argument('--dry-run', action='store_true', help='仅预览整套下载计划，不联网、不写文件')
     p.add_argument('--details', action='store_true', help='展开组件、精度、许可和下载命令等技术详情')
     p.add_argument('--yes', action='store_true', help=argparse.SUPPRESS)
     p.add_argument('--accept-licenses', action='store_true', help=argparse.SUPPRESS)
-    p.add_argument('--reuse-from', type=Path, metavar='已有H3目录', help='读取核验已有H3权重，仅下载差异并以符号链接组装；不移动、不修改源文件')
-    p.add_argument('--reuse-mtp-source', type=Path, metavar='旧MTP目录', help='仅核验指定旧 mtp 目录及其匹配暂存目录中的原件；允许旧目录名有首尾空白，不移动、不删除旧文件')
+    p.add_argument(
+        '--reuse-from',
+        type=Path,
+        metavar='已有H3目录',
+        help='读取核验已有H3权重，仅下载差异并以符号链接组装；不移动、不修改源文件',
+    )
+    p.add_argument(
+        '--reuse-mtp-source',
+        type=Path,
+        metavar='旧MTP目录',
+        help='仅核验指定旧 mtp 目录及其匹配暂存目录中的原件；允许旧目录名有首尾空白，不移动、不删除旧文件',
+    )
     p.add_argument('--sha256', action='store_true', help='下载后额外逐文件计算 SHA256，可能耗时很长')
     p.add_argument('--workers', metavar='并行数', type=int, default=4, help='并行下载任务数，范围 1–32，默认 4')
-    p.add_argument('--cli', type=Path, metavar='客户端路径', help='覆盖自动发现的 ms-hub；默认依次查找 PATH、uv 工具目录、旧版虚拟环境')
+    p.add_argument(
+        '--cli',
+        type=Path,
+        metavar='客户端路径',
+        help='覆盖自动发现的 ms-hub；默认依次查找 PATH、uv 工具目录、旧版虚拟环境',
+    )
     a = p.parse_args(argv)
     if a.dest is not None:
         a.dest = validate_model_root(a.dest)
@@ -1016,7 +1200,19 @@ def main(argv=None):
         return 0
     if a.repo:
         repo = safe_repo(a.repo)
-        selected = [{'id': repo.replace('/', '--'), 'name': repo, 'repo_id': repo, 'revision': a.revision, 'precision': '用户指定，请自行核对', 'license': '用户自行核对', 'include': a.include, 'exclude': a.exclude, 'source_url': 'https://modelscope.cn/models/' + repo}]
+        selected = [
+            {
+                'id': repo.replace('/', '--'),
+                'name': repo,
+                'repo_id': repo,
+                'revision': a.revision,
+                'precision': '用户指定，请自行核对',
+                'license': '用户自行核对',
+                'include': a.include,
+                'exclude': a.exclude,
+                'source_url': 'https://modelscope.cn/models/' + repo,
+            }
+        ]
     else:
         choices = a.select
         interactive = not choices
@@ -1025,6 +1221,7 @@ def main(argv=None):
                 p.error('非交互模式必须指定 --select 或 --repo；查看 --list')
             # 选择专用模式把提示放到 stderr，stdout 只返回 ID，不创建文件。
             from contextlib import redirect_stdout
+
             with redirect_stdout(sys.stderr if a.choose_only else sys.stdout):
                 print_menu(models, (a.dest or Path('~/AI/models')).expanduser().resolve(), a.details)
         while True:
@@ -1053,7 +1250,9 @@ def main(argv=None):
                 if not interactive:
                     raise
                 print(str(exc) + '，请重新选择。', file=sys.stderr)
-    if a.reuse_mtp_source and (a.repo or not any(m.get('final_only_adaptation') for m in expand_dependencies(selected, models))):
+    if a.reuse_mtp_source and (
+        a.repo or not any(m.get('final_only_adaptation') for m in expand_dependencies(selected, models))
+    ):
         raise ValueError('--reuse-mtp-source 仅用于含 MTP 的模型')
     if a.choose_only:
         if not a.repo:
@@ -1082,14 +1281,18 @@ def main(argv=None):
     if a.dry_run or a.details:
         print('\n本次下载（已包含必要组件）：')
         for m in requested_models:
-            print(f"  {m.get('short_name', m.get('name', m['id']))} | {bundle_size([m], models or selected)} | {bundle_target(base, m)}")
+            print(
+                f"  {m.get('short_name', m.get('name', m['id']))} | {bundle_size([m], models or selected)} | {bundle_target(base, m)}"
+            )
         if any(reuse_family(m) for m in selected):
             print('各版本文件合计：' + bundle_size(requested_models, models or selected) + '（未扣同内容权重）')
         else:
             print('合计：' + bundle_size(requested_models, models or selected) + '（共享组件只计一次）')
     if a.details:
         for m, target, _ in plans:
-            print(f"\n{m['id']} -> {target}\n  仓库：{m['repo_id']} | 精度：{m.get('precision', '未知')} | {readiness_label(m)}")
+            print(
+                f"\n{m['id']} -> {target}\n  仓库：{m['repo_id']} | 精度：{m.get('precision', '未知')} | {readiness_label(m)}"
+            )
             print(f"  许可：{m.get('license', '请自行核对')} | {m.get('license_url', m.get('source_url', ''))}")
             print('  ' + m.get('notes', ''))
             print('  ' + m.get('license_notice', ''))
@@ -1099,11 +1302,19 @@ def main(argv=None):
         print(f'按核查 SHA 去重后预计新增约 {estimated / 10**9:.2f} GB（已有源文件须实际校验后扣减）')
     if a.dry_run:
         if a.reuse_mtp_source:
-            print('旧 MTP 来源：' + repr(str(a.reuse_mtp_source)) + '；只核验精确白名单原件及匹配暂存目录，不修改旧目录。')
+            print(
+                '旧 MTP 来源：' + repr(str(a.reuse_mtp_source)) + '；只核验精确白名单原件及匹配暂存目录，不修改旧目录。'
+            )
         if a.reuse_from:
             print('复用源：' + str(a.reuse_from.expanduser()) + '；实际下载前校验 SHA256，预览不读取大权重。')
         if a.details:
-            print(json.dumps({'dry_run': True, 'models_dir': str(base), 'commands': [v[2] for v in plans]}, ensure_ascii=False, indent=2))
+            print(
+                json.dumps(
+                    {'dry_run': True, 'models_dir': str(base), 'commands': [v[2] for v in plans]},
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
         else:
             print('仅预览，未下载；从「管理本地模型 → 下载模型」选择下载。')
         return 0
@@ -1119,31 +1330,57 @@ def main(argv=None):
     plans = prioritize_existing_h3(plans)
     print('检查已有模型：' + str(base), flush=True)
     print('正在核验已有文件；只补缺失组件，已有文件保持原位。', flush=True)
-    preflight = download_preflight(plans, sources, models or selected, base=base, report=True, old_mtp_folder=a.reuse_mtp_source)
+    preflight = download_preflight(
+        plans, sources, models or selected, base=base, report=True, old_mtp_folder=a.reuse_mtp_source
+    )
     free = shutil.disk_usage(ancestor).free
     estimate = sum(row['additional'] for row in preflight)
     network = sum(row['network'] for row in preflight)
-    print(f'可用磁盘 {free / 10**9:.1f} GB；本次下载 {network / 10**9:.2f} GB；本次新增 {estimate / 10**9:.2f} GB', flush=True)
-    peak = estimate + max((row.get('peak_additional', row['additional']) - row['additional'] for row in preflight), default=0)
+    print(
+        f'可用磁盘 {free / 10**9:.1f} GB；本次下载 {network / 10**9:.2f} GB；本次新增 {estimate / 10**9:.2f} GB',
+        flush=True,
+    )
+    peak = estimate + max(
+        (row.get('peak_additional', row['additional']) - row['additional'] for row in preflight), default=0
+    )
     if peak > estimate:
         print(f'处理期间最多需要新增空间 {peak / 10**9:.2f} GB；仅清理成功的本次暂存，旧来源保留。', flush=True)
     if peak > free:
         raise ValueError('磁盘空间不足以补齐缺失组件；请更换下载目录')
-    if (network or any(not m.get('expected_files') for m in selected)) and (not a.cli.is_file() or not os.access(a.cli, os.X_OK)):
+    if (network or any(not m.get('expected_files') for m in selected)) and (
+        not a.cli.is_file() or not os.access(a.cli, os.X_OK)
+    ):
         raise ValueError('没有官方下载客户端；请从「管理本地模型 → 下载模型」按提示准备下载客户端')
     base.mkdir(parents=True, exist_ok=True)
     manifest_dir = target_path(base, 'Mac-AI-Manifests')
     manifest_dir.mkdir(exist_ok=True)
     run_id = dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid.uuid4().hex[:8]
     manifest_path = manifest_dir / (run_id + '.json')
-    manifest = {'schema_version': 1, 'started_utc': run_id.split('-')[0], 'status': 'running', 'client': 'modelscope-hub', 'catalog_sha256': None if a.repo else hashlib.sha256(a.catalog.read_bytes()).hexdigest(), 'models': []}
+    manifest = {
+        'schema_version': 1,
+        'started_utc': run_id.split('-')[0],
+        'status': 'running',
+        'client': 'modelscope-hub',
+        'catalog_sha256': None if a.repo else hashlib.sha256(a.catalog.read_bytes()).hexdigest(),
+        'models': [],
+    }
     save_manifest(manifest_path, manifest)
     completed_sources = {}
     try:
         for index, (m, folder, args) in enumerate(plans, 1):
             if a.details:
                 print(f"正在下载 {index}/{len(plans)}：{m.get('short_name', m.get('name', m['id']))}", flush=True)
-            record = {'id': m['id'], 'repo_id': m['repo_id'], 'requested_revision': m.get('revision') or 'master', 'resolved_commit': None, 'source_url': m.get('source_url'), 'destination': str(folder), 'include': m.get('include', []), 'exclude': m.get('exclude', []), 'status': 'running'}
+            record = {
+                'id': m['id'],
+                'repo_id': m['repo_id'],
+                'requested_revision': m.get('revision') or 'master',
+                'resolved_commit': None,
+                'source_url': m.get('source_url'),
+                'destination': str(folder),
+                'include': m.get('include', []),
+                'exclude': m.get('exclude', []),
+                'status': 'running',
+            }
             manifest['models'].append(record)
             save_manifest(manifest_path, manifest)
             # 参数以列表传递，不经 shell 求值；不导入仓库代码。
@@ -1152,7 +1389,9 @@ def main(argv=None):
                 record['files'] = download_final_mtp(a.cli, m, folder, a.workers, a.reuse_mtp_source)
             elif m.get('expected_files'):
                 model_sources = sources + completed_sources.get(family, [])
-                record['files'] = download_verified_bundle(a.cli, m, folder, a.workers, model_sources, models or selected, preflight[index - 1]['local_reuse'])
+                record['files'] = download_verified_bundle(
+                    a.cli, m, folder, a.workers, model_sources, models or selected, preflight[index - 1]['local_reuse']
+                )
                 completed_sources.setdefault(family, []).append(folder)
             else:
                 subprocess.run(args, check=True)

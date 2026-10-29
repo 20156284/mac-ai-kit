@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """离线、限定目录的 H3 去重；不下载、安装或执行模型。"""
+
 from path_validation import validate_model_root
 
 import argparse
@@ -135,9 +136,13 @@ def merge(models_dir, models, dry_run=False):
     by_id = {m['id']: m for m in models}
     selected = [by_id[key] for key in IDS]
     specs = [verified_specs(m) for m in selected]
-    common = {name: spec for name, spec in specs[0].items()
-              if name in specs[1] and spec['bytes'] == specs[1][name]['bytes']
-              and spec['sha256'].lower() == specs[1][name]['sha256'].lower()}
+    common = {
+        name: spec
+        for name, spec in specs[0].items()
+        if name in specs[1]
+        and spec['bytes'] == specs[1][name]['bytes']
+        and spec['sha256'].lower() == specs[1][name]['sha256'].lower()
+    }
     folders = []
     result = dict(merged=0, already_shared=0, skipped=0, bytes_saved=0, detected=0)
     for relative in dict.fromkeys([m['subdir'] for m in selected] + [LEGACY]):
@@ -207,13 +212,19 @@ def merge(models_dir, models, dry_run=False):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='自动检测并合并本地 H3 相同共享文件；不下载、不执行模型。')
-    parser.add_argument('--models-dir', type=str, default=Path.home() / 'AI/models', help='共享模型根目录，默认 ~/AI/models')
+    parser.add_argument(
+        '--models-dir', type=str, default=Path.home() / 'AI/models', help='共享模型根目录，默认 ~/AI/models'
+    )
     parser.add_argument('--dry-run', action='store_true', help='完整核验但不修改任何文件')
     args = parser.parse_args(argv)
     try:
         result = merge(args.models_dir, load_catalog(ROOT / 'catalog.json'), args.dry_run)
-        print(('预览：' if args.dry_run else '完成：') + f"合并 {result['merged']} 个；已共享 {result['already_shared']} 个；跳过 {result['skipped']} 个；"
-              + ('预计' if args.dry_run else '') + f"去重文件逻辑大小 {result['bytes_saved']} 字节（{result['bytes_saved'] / 10**9:.2f} GB）。")
+        print(
+            ('预览：' if args.dry_run else '完成：')
+            + f"合并 {result['merged']} 个；已共享 {result['already_shared']} 个；跳过 {result['skipped']} 个；"
+            + ('预计' if args.dry_run else '')
+            + f"去重文件逻辑大小 {result['bytes_saved']} 字节（{result['bytes_saved'] / 10**9:.2f} GB）。"
+        )
         print('两个模型目录和差异文件保持原位；共享源被删除或移动会使链接失效。')
         return 0
     except (OSError, ValueError, KeyError) as exc:

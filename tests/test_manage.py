@@ -1,4 +1,5 @@
 """Bash 单入口离线回归；安装器与网络均替换为本地 mock。"""
+
 import os
 from pathlib import Path
 import shlex
@@ -9,6 +10,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+
 
 class EntryTests(unittest.TestCase):
     def setUp(self):
@@ -23,17 +25,30 @@ class EntryTests(unittest.TestCase):
         shutil.copy2(ROOT / 'scripts/path_validation.sh', self.scripts / 'path_validation.sh')
         shutil.copy2(ROOT / 'scripts/model_directory.sh', self.scripts / 'model_directory.sh')
         shutil.copy2(ROOT / 'scripts/path_validation.py', self.scripts / 'path_validation.py')
-        self.bin = self.work / 'bin'; self.bin.mkdir()
-        self.home = self.work / 'home'; self.home.mkdir()
+        self.bin = self.work / 'bin'
+        self.bin.mkdir()
+        self.home = self.work / 'home'
+        self.home.mkdir()
         self.log = self.work / 'calls'
         for utility in ('dirname', 'cat', 'mkdir', 'mktemp', 'mv', 'rm'):
             (self.bin / utility).symlink_to(shutil.which(utility))
-        self.env = dict(os.environ, HOME=str(self.home), XDG_CONFIG_HOME=str(self.home / '.config'), PATH=str(self.bin), LOG=str(self.log))
+        self.env = dict(
+            os.environ,
+            HOME=str(self.home),
+            XDG_CONFIG_HOME=str(self.home / '.config'),
+            PATH=str(self.bin),
+            LOG=str(self.log),
+        )
         self.script('python3', 'exit 1', self.bin)
         self.script('setup_mac_environment.sh', 'printf "env\\n" >> "$LOG"')
-        self.script('setup_ai_capabilities.sh', 'if [ "$1" = --confirm-only ]; then echo mlx-serve; exit 0; fi; printf "caps\\n" >> "$LOG"; printf "%s\\n" "$@" >> "$LOG"')
+        self.script(
+            'setup_ai_capabilities.sh',
+            'if [ "$1" = --confirm-only ]; then echo mlx-serve; exit 0; fi; printf "caps\\n" >> "$LOG"; printf "%s\\n" "$@" >> "$LOG"',
+        )
         self.script('bootstrap_download_env.sh', 'printf "client\\n" >> "$LOG"')
-        (self.scripts / 'download_models.py').write_text('import sys\nif "--choose-only" in sys.argv: print(sys.argv[sys.argv.index("--select")+1] if "--select" in sys.argv else "mock-model")\nelse: print("DOWNLOAD", repr(sys.argv[1:]))\n')
+        (self.scripts / 'download_models.py').write_text(
+            'import sys\nif "--choose-only" in sys.argv: print(sys.argv[sys.argv.index("--select")+1] if "--select" in sys.argv else "mock-model")\nelse: print("DOWNLOAD", repr(sys.argv[1:]))\n'
+        )
         (self.scripts / 'merge_h3_models.py').write_text('import sys\nprint("MERGE", repr(sys.argv[1:]))\n')
 
     def script(self, name, body, folder=None):
@@ -43,12 +58,24 @@ class EntryTests(unittest.TestCase):
         return target
 
     def run_entry(self, args=(), data=''):
-        return subprocess.run(['/bin/bash', str(self.kit / 'start.sh'), *args], input=data,
-                              cwd=self.work, env=self.env, text=True, capture_output=True)
+        return subprocess.run(
+            ['/bin/bash', str(self.kit / 'start.sh'), *args],
+            input=data,
+            cwd=self.work,
+            env=self.env,
+            text=True,
+            capture_output=True,
+        )
 
     def ready_runtime(self):
         self.script('python3', 'exec ' + shlex.quote(sys.executable) + ' "$@"', self.bin)
-        self.script('uv', 'case "$1 $2" in "python find") printf "%s\\n" ' + shlex.quote(sys.executable) + ' ;; "tool dir") printf "%s\\n" "$HOME/.local/bin" ;; esac', self.bin)
+        self.script(
+            'uv',
+            'case "$1 $2" in "python find") printf "%s\\n" '
+            + shlex.quote(sys.executable)
+            + ' ;; "tool dir") printf "%s\\n" "$HOME/.local/bin" ;; esac',
+            self.bin,
+        )
 
     def test_api_scan_never_prepares_runtime(self):
         self.ready_runtime()
@@ -66,7 +93,10 @@ class EntryTests(unittest.TestCase):
         models = self.home / 'AI/models'
         models.mkdir()
         (self.scripts / 'api_inventory.py').write_text('import sys\nprint("INVENTORY", repr(sys.argv[1:]))\n')
-        for args in (['capabilities', '--install', '--select', 'audio.cpp'], ['download', '--models-dir', str(models), '--select', 'x']):
+        for args in (
+            ['capabilities', '--install', '--select', 'audio.cpp'],
+            ['download', '--models-dir', str(models), '--select', 'x'],
+        ):
             result = self.run_entry(args)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn('INVENTORY', result.stdout)
@@ -75,7 +105,9 @@ class EntryTests(unittest.TestCase):
             result = self.run_entry(args)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertNotIn('INVENTORY', result.stdout)
-        (self.scripts / 'download_models.py').write_text('import sys\nif "--choose-only" in sys.argv: print("mock-model")\nelse: raise SystemExit(7)\n')
+        (self.scripts / 'download_models.py').write_text(
+            'import sys\nif "--choose-only" in sys.argv: print("mock-model")\nelse: raise SystemExit(7)\n'
+        )
         result = self.run_entry(['download', '--models-dir', str(models), '--select', 'x'])
         self.assertEqual(result.returncode, 7)
         self.assertIn('INVENTORY', result.stdout)  # 报告部分文件，不吞下载失败退出码。
@@ -124,7 +156,8 @@ class EntryTests(unittest.TestCase):
 
     def test_install_rejects_symlink_or_missing_volume(self):
         self.ready_runtime()
-        link = self.home / 'linked'; link.symlink_to(self.home, target_is_directory=True)
+        link = self.home / 'linked'
+        link.symlink_to(self.home, target_is_directory=True)
         for directory in (str(link / 'models'), '/Volumes/lean-nonexistent-test-drive/models', str(self.home / '..')):
             result = self.run_entry(['capabilities', '--install', '--models-dir', directory])
             self.assertEqual(result.returncode, 2 if directory.endswith('/..') else 1, result.stderr)
@@ -132,8 +165,10 @@ class EntryTests(unittest.TestCase):
 
     def server_fixture(self, port_busy=False, exit_code=0):
         model = self.home / "AI/models/model O'Brien"
-        model.mkdir(parents=True); (model / 'config.json').write_text('{}')
-        folder = self.home / 'AI/bin'; folder.mkdir(parents=True)
+        model.mkdir(parents=True)
+        (model / 'config.json').write_text('{}')
+        folder = self.home / 'AI/bin'
+        folder.mkdir(parents=True)
         self.script('mlx-serve', 'printf "%s\\n" "$@" > "$LOG"; exit ' + str(exit_code), folder)
         self.script('lsof', 'exit ' + ('0' if port_busy else '1'), self.bin)
         return model
@@ -155,8 +190,11 @@ class EntryTests(unittest.TestCase):
 
     def test_h3_reuse_parameter_preserves_path_with_spaces(self):
         self.ready_runtime()
-        source = self.work / "old H3 O'Brien"; source.mkdir()
-        result = self.run_entry(['download', '--dry-run', '--select', 'h3-ref2va-mlx-8bit', '--reuse-from', str(source)])
+        source = self.work / "old H3 O'Brien"
+        source.mkdir()
+        result = self.run_entry(
+            ['download', '--dry-run', '--select', 'h3-ref2va-mlx-8bit', '--reuse-from', str(source)]
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('--reuse-from', result.stdout)
         self.assertIn(str(source), result.stdout)
@@ -229,10 +267,21 @@ class EntryTests(unittest.TestCase):
         # PATH initially has neither working Python nor uv. Installer creates a uv
         # command in a newly-created ~/.local/bin and exposes a managed Python.
         body = '/bin/mkdir -p "$HOME/.local/bin"\n'
-        uv = '#!/bin/bash\ncase "$1 $2" in "python find") printf "%s\\n" ' + shlex.quote(sys.executable) + ' ;; "tool dir") printf "%s\\n" "$HOME/.local/bin" ;; esac\n'
-        body += 'printf %s ' + shlex.quote(uv) + ' > "$HOME/.local/bin/uv"\n/bin/chmod +x "$HOME/.local/bin/uv"\nprintf "env\\n" >> "$LOG"'
+        uv = (
+            '#!/bin/bash\ncase "$1 $2" in "python find") printf "%s\\n" '
+            + shlex.quote(sys.executable)
+            + ' ;; "tool dir") printf "%s\\n" "$HOME/.local/bin" ;; esac\n'
+        )
+        body += (
+            'printf %s '
+            + shlex.quote(uv)
+            + ' > "$HOME/.local/bin/uv"\n/bin/chmod +x "$HOME/.local/bin/uv"\nprintf "env\\n" >> "$LOG"'
+        )
         self.script('setup_mac_environment.sh', body)
-        self.script('bootstrap_download_env.sh', 'printf "client\\n" >> "$LOG"\nprintf "#!/bin/bash\\nexit 0\\n" > "$HOME/.local/bin/ms-hub"\n/bin/chmod +x "$HOME/.local/bin/ms-hub"')
+        self.script(
+            'bootstrap_download_env.sh',
+            'printf "client\\n" >> "$LOG"\nprintf "#!/bin/bash\\nexit 0\\n" > "$HOME/.local/bin/ms-hub"\n/bin/chmod +x "$HOME/.local/bin/ms-hub"',
+        )
         result = self.run_entry(['download', '--select', '1', '--models-dir', 'model folder'])
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertEqual(self.log.read_text().splitlines(), ['env', 'client'])
@@ -266,7 +315,8 @@ class EntryTests(unittest.TestCase):
         self.assertFalse(self.log.exists())
 
     def test_directory_is_shared_and_asked_once(self):
-        self.ready_runtime(); self.script('ms-hub', 'exit 0', self.bin)
+        self.ready_runtime()
+        self.script('ms-hub', 'exit 0', self.bin)
         result = self.run_entry(data="d\nrelative model folder\n2\n1\n1\n0\n0\n")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.count('（输入 q 取消）'), 1)
@@ -297,9 +347,17 @@ class EntryTests(unittest.TestCase):
         self.assertEqual(self.run_entry(['env', '--reuse-mtp-source', str(source)]).returncode, 2)
 
     def test_bad_arguments_do_not_install(self):
-        for args in (['bad'], ['env', '--yes'], ['models', '--install'], ['env', '--install', '--dry-run'], ['download', '--models-dir', '/'], ['download', '--select']):
+        for args in (
+            ['bad'],
+            ['env', '--yes'],
+            ['models', '--install'],
+            ['env', '--install', '--dry-run'],
+            ['download', '--models-dir', '/'],
+            ['download', '--select'],
+        ):
             self.assertEqual(self.run_entry(args).returncode, 2, args)
         self.assertFalse(self.log.exists())
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,4 +1,5 @@
 """模型发现与严格分词的全离线测试；不访问服务，不执行第三方实现。"""
+
 import contextlib
 import asyncio
 import hashlib
@@ -52,9 +53,12 @@ class DiscoveryTests(unittest.TestCase):
         response.read.assert_called_once_with(discovery.LIMIT + 1)
 
     def test_transport_failures_propagate_once(self):
-        errors = [TimeoutError('timeout'), URLError('offline'),
-                  HTTPError('http://local/v1/models', 401, 'unauthorized', {}, None),
-                  HTTPError('http://local/v1/models', 503, 'loading', {}, None)]
+        errors = [
+            TimeoutError('timeout'),
+            URLError('offline'),
+            HTTPError('http://local/v1/models', 401, 'unauthorized', {}, None),
+            HTTPError('http://local/v1/models', 503, 'loading', {}, None),
+        ]
         for error in errors:
             with self.subTest(error=type(error).__name__):
                 opener = Mock()
@@ -65,11 +69,21 @@ class DiscoveryTests(unittest.TestCase):
                 opener.open.assert_called_once()
 
     def test_invalid_payloads_and_duplicate_ids(self):
-        payloads = [None, [], {}, {'data': []}, {'data': 'bad'},
-                    {'data': [None]}, {'data': [{}]}, {'data': [{'id': 1}]},
-                    {'data': [{'id': ''}]}, {'data': [{'id': '--help'}]},
-                    {'data': [{'id': 'bad\x1b'}]}, {'data': [{'id': 'bad\x7f'}]},
-                    {'data': [{'id': 'same'}, {'id': 'same'}]}]
+        payloads = [
+            None,
+            [],
+            {},
+            {'data': []},
+            {'data': 'bad'},
+            {'data': [None]},
+            {'data': [{}]},
+            {'data': [{'id': 1}]},
+            {'data': [{'id': ''}]},
+            {'data': [{'id': '--help'}]},
+            {'data': [{'id': 'bad\x1b'}]},
+            {'data': [{'id': 'bad\x7f'}]},
+            {'data': [{'id': 'same'}, {'id': 'same'}]},
+        ]
         for payload in payloads:
             with self.subTest(payload=payload):
                 opener, _ = self.fetch(payload)
@@ -93,8 +107,13 @@ class DiscoveryTests(unittest.TestCase):
             prompt.assert_not_called()
         with patch('builtins.input', return_value='2'), contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(discovery.choose(rows, 'choose', str), rows[1])
-        for value, error in [('', EOFError), ('q', EOFError), ('0', ValueError),
-                             ('3', ValueError), ('bad', ValueError)]:
+        for value, error in [
+            ('', EOFError),
+            ('q', EOFError),
+            ('0', ValueError),
+            ('3', ValueError),
+            ('bad', ValueError),
+        ]:
             with patch('builtins.input', return_value=value) as prompt, contextlib.redirect_stdout(io.StringIO()):
                 with self.assertRaises(error):
                     discovery.choose(rows, 'choose', str)
@@ -126,8 +145,12 @@ class LocalResolutionTests(unittest.TestCase):
 
     def test_repo_basename_and_root_exact_matches(self):
         folder = self.local('llm/Model-8bit', 'original/Model')
-        for model in ({'id': 'original/Model'}, {'id': 'Model-8bit'},
-                      {'id': 'alias', 'root': 'original/Model'}, {'id': str(folder)}):
+        for model in (
+            {'id': 'original/Model'},
+            {'id': 'Model-8bit'},
+            {'id': 'alias', 'root': 'original/Model'},
+            {'id': str(folder)},
+        ):
             with self.subTest(model=model), patch('builtins.input') as prompt:
                 resolved = discovery.resolve_tokenizer(model, self.base)
                 self.assertEqual(resolved['kind'], 'local')
@@ -137,9 +160,11 @@ class LocalResolutionTests(unittest.TestCase):
 
     def test_relative_model_path_uses_existing_tokenizer_without_hub(self):
         folder = self.local('llm/Qwen3.8-27B-bf16')
-        for model in ({'id': 'llm/Qwen3.8-27B-bf16'},
-                      {'id': './llm/Qwen3.8-27B-bf16'},
-                      {'id': 'alias', 'root': 'llm/Qwen3.8-27B-bf16'}):
+        for model in (
+            {'id': 'llm/Qwen3.8-27B-bf16'},
+            {'id': './llm/Qwen3.8-27B-bf16'},
+            {'id': 'alias', 'root': 'llm/Qwen3.8-27B-bf16'},
+        ):
             with patch('builtins.input') as prompt:
                 result = discovery.resolve_tokenizer(model, self.base)
             self.assertEqual(result['kind'], 'local')
@@ -147,9 +172,20 @@ class LocalResolutionTests(unittest.TestCase):
             prompt.assert_not_called()
 
     def test_known_missing_folder_falls_back_to_catalog_repo_not_llm_path(self):
-        (self.kit / 'catalog.json').write_text(json.dumps({'models': [
-            {'id': 'qwen', 'repo_id': 'mlx-community/Qwen3.8-27B-bf16',
-             'subdir': 'llm/Qwen3.8-27B-bf16', 'group': 'llm'}]}))
+        (self.kit / 'catalog.json').write_text(
+            json.dumps(
+                {
+                    'models': [
+                        {
+                            'id': 'qwen',
+                            'repo_id': 'mlx-community/Qwen3.8-27B-bf16',
+                            'subdir': 'llm/Qwen3.8-27B-bf16',
+                            'group': 'llm',
+                        }
+                    ]
+                }
+            )
+        )
         result = discovery.resolve_tokenizer({'id': 'llm/Qwen3.8-27B-bf16'}, self.base)
         self.assertEqual(result['kind'], 'public')
         self.assertEqual(result['value'], 'mlx-community/Qwen3.8-27B-bf16')
@@ -182,11 +218,29 @@ class LocalResolutionTests(unittest.TestCase):
 
     def test_catalog_and_auditable_mapping(self):
         folder = self.local('llm/Quantized')
-        (self.kit / 'catalog.json').write_text(json.dumps({'models': [
-            {'id': 'kit-model', 'repo_id': 'converter/Quantized', 'subdir': 'llm/Quantized', 'group': 'llm'}]}))
-        (self.kit / 'config/benchmark_tokenizers.json').write_text(json.dumps({'models': [
-            {'repo_id': 'converter/Quantized', 'base_model': 'original/Base', 'source': 'https://example.org/model-card',
-             'tokenizer_sha256': hashlib.sha256((folder / 'tokenizer.json').read_bytes()).hexdigest()}]}))
+        (self.kit / 'catalog.json').write_text(
+            json.dumps(
+                {
+                    'models': [
+                        {'id': 'kit-model', 'repo_id': 'converter/Quantized', 'subdir': 'llm/Quantized', 'group': 'llm'}
+                    ]
+                }
+            )
+        )
+        (self.kit / 'config/benchmark_tokenizers.json').write_text(
+            json.dumps(
+                {
+                    'models': [
+                        {
+                            'repo_id': 'converter/Quantized',
+                            'base_model': 'original/Base',
+                            'source': 'https://example.org/model-card',
+                            'tokenizer_sha256': hashlib.sha256((folder / 'tokenizer.json').read_bytes()).hexdigest(),
+                        }
+                    ]
+                }
+            )
+        )
         for identity in ('kit-model', 'converter/Quantized', 'original/Base'):
             result = discovery.resolve_tokenizer({'id': identity}, self.base)
             self.assertEqual(result['value'], str(folder))
@@ -247,11 +301,29 @@ class LocalResolutionTests(unittest.TestCase):
 
     def test_cross_repo_mapping_requires_exact_tokenizer_hash(self):
         folder = self.local('llm/Quantized')
-        (self.kit / 'catalog.json').write_text(json.dumps({'models': [
-            {'id': 'kit-model', 'repo_id': 'converter/Quantized', 'subdir': 'llm/Quantized', 'group': 'llm'}]}))
-        (self.kit / 'config/benchmark_tokenizers.json').write_text(json.dumps({'models': [
-            {'repo_id': 'converter/Quantized', 'base_model': 'original/Base',
-             'source': 'https://example.org/model-card', 'tokenizer_sha256': '0' * 64}]}))
+        (self.kit / 'catalog.json').write_text(
+            json.dumps(
+                {
+                    'models': [
+                        {'id': 'kit-model', 'repo_id': 'converter/Quantized', 'subdir': 'llm/Quantized', 'group': 'llm'}
+                    ]
+                }
+            )
+        )
+        (self.kit / 'config/benchmark_tokenizers.json').write_text(
+            json.dumps(
+                {
+                    'models': [
+                        {
+                            'repo_id': 'converter/Quantized',
+                            'base_model': 'original/Base',
+                            'source': 'https://example.org/model-card',
+                            'tokenizer_sha256': '0' * 64,
+                        }
+                    ]
+                }
+            )
+        )
         result = discovery.resolve_tokenizer({'id': 'original/Base'}, self.base)
         self.assertEqual(result['kind'], 'public')
         self.assertEqual(result['value'], 'original/Base')
@@ -326,15 +398,19 @@ class StrictTokenizerTests(unittest.TestCase):
         client = types.SimpleNamespace(_non_empty_user_content=lambda text: text or 'empty')
         for reported, expected_error in ((2000, False), (2100, False), (50, True), (4000, True), (0, False)):
             result = types.SimpleNamespace(error=None, prompt_tokens=reported)
+
             async def original(*args, **kwargs):
                 return result
+
             wrapped = runner.guard_prompt_count(original)
             with contextlib.redirect_stdout(io.StringIO()):
                 actual = asyncio.run(wrapped(client, None, 'x' * 1000, 'x' * 1000, 10, False, tokenizer))
             self.assertEqual(bool(actual.error), expected_error)
         result = types.SimpleNamespace(error='original failure', prompt_tokens=50)
+
         async def failed(*args, **kwargs):
             return result
+
         actual = asyncio.run(runner.guard_prompt_count(failed)(client, None, '', 'x' * 2000, 10, False, tokenizer))
         self.assertEqual(actual.error, 'original failure')
 
@@ -342,13 +418,19 @@ class StrictTokenizerTests(unittest.TestCase):
         class Corpus:
             def _get_tokenizer(self, *_):
                 raise AssertionError('old fallback must not run')
+
         invoke = Mock()
         client = type('Client', (), {'run_generation': Mock()})
-        modules = {'llama_benchy': types.SimpleNamespace(__version__='0.4.0'),
-                   'llama_benchy.corpus': types.SimpleNamespace(TokenizedCorpus=Corpus),
-                   'llama_benchy.__main__': types.SimpleNamespace(main=invoke),
-                   'llama_benchy.client': types.SimpleNamespace(LLMClient=client)}
-        with patch.dict(sys.modules, modules), patch.object(runner, 'strict_tokenizer', return_value='strict') as strict:
+        modules = {
+            'llama_benchy': types.SimpleNamespace(__version__='0.4.0'),
+            'llama_benchy.corpus': types.SimpleNamespace(TokenizedCorpus=Corpus),
+            'llama_benchy.__main__': types.SimpleNamespace(main=invoke),
+            'llama_benchy.client': types.SimpleNamespace(LLMClient=client),
+        }
+        with (
+            patch.dict(sys.modules, modules),
+            patch.object(runner, 'strict_tokenizer', return_value='strict') as strict,
+        ):
             runner.main()
             self.assertEqual(Corpus()._get_tokenizer('model', 'exact'), 'strict')
             strict.assert_called_once_with('exact')
@@ -371,9 +453,16 @@ class BenchmarkIntegrationTests(unittest.TestCase):
             output = root / 'reports'
             process = Mock(returncode=1)
             process.poll.return_value = 1
-            with patch.object(bench.subprocess, 'Popen', return_value=process) as popen, contextlib.redirect_stdout(io.StringIO()):
-                self.assertEqual(bench.run('/mock/uvx', bench.DEFAULT_URL, 'alias', str(source),
-                                          [0, 10, 20, 40], output, {'kind': 'local'}), 1)
+            with (
+                patch.object(bench.subprocess, 'Popen', return_value=process) as popen,
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(
+                    bench.run(
+                        '/mock/uvx', bench.DEFAULT_URL, 'alias', str(source), [0, 10, 20, 40], output, {'kind': 'local'}
+                    ),
+                    1,
+                )
             args = popen.call_args.args[0]
             snapshot = Path(args[args.index('--tokenizer') + 1])
             self.assertTrue(snapshot.is_absolute())
@@ -396,10 +485,12 @@ class BenchmarkIntegrationTests(unittest.TestCase):
             source.mkdir()
             (source / 'tokenizer.json').write_text('{}')
             original = Path.open
+
             def restricted(path, *args, **kwargs):
                 if path == source / 'tokenizer.json':
                     raise PermissionError('denied')
                 return original(path, *args, **kwargs)
+
             with patch.object(Path, 'open', restricted), patch.object(bench.subprocess, 'Popen') as popen:
                 with self.assertRaises(PermissionError):
                     bench.run('/mock/uvx', bench.DEFAULT_URL, 'alias', str(source), [0, 1, 2, 4], root / 'reports')
@@ -408,23 +499,32 @@ class BenchmarkIntegrationTests(unittest.TestCase):
     def test_explicit_model_root_overrides_saved_setting(self):
         bench = load('tested_benchmark_explicit_root', 'llama_benchmark.py')
         with tempfile.TemporaryDirectory() as directory:
-            with patch.object(bench.sys, 'argv', ['benchmark', '--models-dir', directory, '--base-url', bench.DEFAULT_URL]), \
-                    patch.object(bench.shutil, 'which', return_value='/mock/uvx'), \
-                    patch.object(bench, 'default_model_root', side_effect=AssertionError('显式目录不能读默认设置')), \
-                    patch.object(bench, 'discover', return_value=[{'id': 'llm/Model'}]), \
-                    patch.object(bench, 'resolve_tokenizer', side_effect=ValueError('测试停止')) as resolve, \
-                    contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            with (
+                patch.object(
+                    bench.sys, 'argv', ['benchmark', '--models-dir', directory, '--base-url', bench.DEFAULT_URL]
+                ),
+                patch.object(bench.shutil, 'which', return_value='/mock/uvx'),
+                patch.object(bench, 'default_model_root', side_effect=AssertionError('显式目录不能读默认设置')),
+                patch.object(bench, 'discover', return_value=[{'id': 'llm/Model'}]),
+                patch.object(bench, 'resolve_tokenizer', side_effect=ValueError('测试停止')) as resolve,
+                contextlib.redirect_stdout(io.StringIO()),
+                contextlib.redirect_stderr(io.StringIO()),
+            ):
                 self.assertEqual(bench.main(), 1)
                 self.assertEqual(resolve.call_args.args[1], Path(directory))
 
     def test_main_discovery_failure_returns_once_without_running(self):
         bench = load('tested_benchmark_main_failure', 'llama_benchmark.py')
         for error in (TimeoutError('timeout'), ValueError('bad models')):
-            with patch.object(bench.sys, 'argv', ['benchmark']), \
-                    patch.object(bench.shutil, 'which', return_value='/mock/uvx'), \
-                    patch('builtins.input', return_value='http://local/v1') as prompt, \
-                    patch.object(bench, 'discover', side_effect=error) as discover_mock, \
-                    patch.object(bench, 'run') as run, contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            with (
+                patch.object(bench.sys, 'argv', ['benchmark']),
+                patch.object(bench.shutil, 'which', return_value='/mock/uvx'),
+                patch('builtins.input', return_value='http://local/v1') as prompt,
+                patch.object(bench, 'discover', side_effect=error) as discover_mock,
+                patch.object(bench, 'run') as run,
+                contextlib.redirect_stdout(io.StringIO()),
+                contextlib.redirect_stderr(io.StringIO()),
+            ):
                 self.assertEqual(bench.main(), 1)
                 discover_mock.assert_called_once()
                 prompt.assert_called_once()

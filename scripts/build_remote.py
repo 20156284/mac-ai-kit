@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """将 Remote 源文件嵌入独立启动脚本，不运行服务或安装依赖。"""
+
 import argparse
 import base64
 from pathlib import Path

@@ -1,4 +1,5 @@
 """已下载模型只读清单与去重建议；使用微型临时文件，不读取真实权重。"""
+
 import contextlib
 import hashlib
 import io
@@ -23,10 +24,17 @@ class ModelInventoryTests(unittest.TestCase):
         self.base.mkdir()
         self.data = b'tiny fixture'
         spec = {'bytes': len(self.data), 'sha256': hashlib.sha256(self.data).hexdigest()}
-        self.models = [{'id': key, 'repo_id': 'test/' + variant, 'name': variant,
-                        'subdir': 'video/' + variant, 'group': 'image_video',
-                        'expected_files': {'shared.bin': dict(spec)}}
-                       for key, variant in zip(inventory.IDS, ('FL', 'REF'))]
+        self.models = [
+            {
+                'id': key,
+                'repo_id': 'test/' + variant,
+                'name': variant,
+                'subdir': 'video/' + variant,
+                'group': 'image_video',
+                'expected_files': {'shared.bin': dict(spec)},
+            }
+            for key, variant in zip(inventory.IDS, ('FL', 'REF'))
+        ]
 
     def write(self, index, data=None):
         folder = self.base / self.models[index]['subdir']
@@ -46,7 +54,8 @@ class ModelInventoryTests(unittest.TestCase):
         self.assertEqual((size, count), (0, 0))
 
     def test_expected_metadata_no_weight_read(self):
-        self.write(0); self.write(1)
+        self.write(0)
+        self.write(1)
         with patch.object(Path, 'open', side_effect=AssertionError('不可打开权重')):
             _, rows, size, count = inventory.scan(self.base, self.models)
         self.assertEqual([r['state'] for r in rows], ['文件齐全'] * 2)
@@ -54,7 +63,8 @@ class ModelInventoryTests(unittest.TestCase):
 
     def test_shared_symlink_not_suggested_again(self):
         a, b = self.write(0), self.write(1)
-        b.unlink(); b.symlink_to(os.path.relpath(a, b.parent))
+        b.unlink()
+        b.symlink_to(os.path.relpath(a, b.parent))
         _, rows, size, count = inventory.scan(self.base, self.models)
         self.assertEqual(rows[1]['state'], '文件齐全')
         self.assertEqual(rows[1]['shared'], 1)
@@ -62,13 +72,16 @@ class ModelInventoryTests(unittest.TestCase):
 
     def test_shared_hardlink_not_suggested_again(self):
         a, b = self.write(0), self.write(1)
-        b.unlink(); os.link(a, b)
+        b.unlink()
+        os.link(a, b)
         self.assertEqual(inventory.scan(self.base, self.models)[2:], (0, 0))
 
     def test_external_symlink_not_followed(self):
         p = self.write(0)
-        outside = self.base.parent / 'outside'; outside.write_bytes(self.data)
-        p.unlink(); p.symlink_to(outside)
+        outside = self.base.parent / 'outside'
+        outside.write_bytes(self.data)
+        p.unlink()
+        p.symlink_to(outside)
         _, rows, _, _ = inventory.scan(self.base, self.models)
         self.assertEqual(rows[0]['bytes'], 0)
         self.assertEqual(rows[0]['state'], '不完整 0/1')
@@ -92,7 +105,8 @@ class ModelInventoryTests(unittest.TestCase):
         self.assertEqual(rows[0]['state'], '不完整 1/2')
 
     def test_report_is_explicit_estimate_not_disk_free_claim(self):
-        self.write(0); self.write(1)
+        self.write(0)
+        self.write(1)
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             inventory.display(*inventory.scan(self.base, self.models))
@@ -103,9 +117,13 @@ class ModelInventoryTests(unittest.TestCase):
     def test_entry_read_only_and_nonexistent_root(self):
         missing = self.base / 'not-created'
         env = dict(os.environ, HOME=str(self.base.parent / 'home'))
-        result = subprocess.run(['/bin/bash', str(ROOT / 'start.sh'), 'installed-models',
-                                 '--models-dir', str(missing)], env=env, text=True,
-                                capture_output=True, timeout=10)
+        result = subprocess.run(
+            ['/bin/bash', str(ROOT / 'start.sh'), 'installed-models', '--models-dir', str(missing)],
+            env=env,
+            text=True,
+            capture_output=True,
+            timeout=10,
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('目录尚不存在', result.stdout)
         self.assertFalse(missing.exists())
@@ -113,7 +131,8 @@ class ModelInventoryTests(unittest.TestCase):
 
     def test_legacy_directory_is_visible(self):
         p = self.base / inventory.LEGACY / 'shared.bin'
-        p.parent.mkdir(parents=True); p.write_bytes(self.data)
+        p.parent.mkdir(parents=True)
+        p.write_bytes(self.data)
         _, rows, _, _ = inventory.scan(self.base, self.models)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]['state'], '文件齐全')

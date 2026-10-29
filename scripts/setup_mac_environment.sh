@@ -6,11 +6,17 @@ MODE=preview
 DETAILS=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --dry-run|--preview) MODE=preview ;;
-    --install) MODE=install ;;
-    --details) DETAILS=1 ;;
-    -h|--help) printf '用法： bash %s [--dry-run | --install] [--details]\n默认仅检查；--install 一次确认基础工具安装计划；--details 查看路径、版本和详细计划。\n' "$0"; exit 0 ;;
-    *) printf '未知参数： %s\n' "$1" >&2; exit 2 ;;
+  --dry-run | --preview) MODE=preview ;;
+  --install) MODE=install ;;
+  --details) DETAILS=1 ;;
+  -h | --help)
+    printf '用法： bash %s [--dry-run | --install] [--details]\n默认仅检查；--install 一次确认基础工具安装计划；--details 查看路径、版本和详细计划。\n' "$0"
+    exit 0
+    ;;
+  *)
+    printf '未知参数： %s\n' "$1" >&2
+    exit 2
+    ;;
   esac
   shift
 done
@@ -23,12 +29,19 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 say() { printf '%s\n' "$*"; }
-fail() { say "[未完成] $*" >&2; FAILURES=$((FAILURES + 1)); }
+fail() {
+  say "[未完成] $*" >&2
+  FAILURES=$((FAILURES + 1))
+}
 confirm() {
   local answer
   printf '\n%s [y/N]（y 执行，回车跳过） ' "$*"
   IFS= read -r answer || return 1
-  case "$answer" in y|Y|yes|YES) return 0 ;; *) SKIPPED=$((SKIPPED + 1)); return 1 ;; esac
+  case "$answer" in y | Y | yes | YES) return 0 ;; *)
+    SKIPPED=$((SKIPPED + 1))
+    return 1
+    ;;
+  esac
 }
 has() { command -v "$1" >/dev/null 2>&1; }
 # 不对用户输入或用户配置执行 eval；仅经同意后追加官方初始化配置。
@@ -48,7 +61,8 @@ report_tool() {
   else say "[$tool] 未找到"; fi
 }
 report() {
-  say ''; say '环境检查：'
+  say ''
+  say '环境检查：'
   for tool in brew macmon uv python3 fnm node npm docker; do report_tool "$tool" --version; done
   report_tool ffmpeg -version
   local app
@@ -69,18 +83,32 @@ if [ "$MODE" = preview ]; then
     say '不主动升级现有工具；安装新包可能更新必要依赖。'
   fi
   report
-  say ''; say '从「安装运行工具 → 准备基础工具」补齐缺少的依赖。'
+  say ''
+  say '从「安装运行工具 → 准备基础工具」补齐缺少的依赖。'
   [ "$DETAILS" -eq 0 ] || say '高级命令：bash scripts/setup_mac_environment.sh --install'
   exit 0
 fi
 say '先查看基础工具计划，再一次确认；Docker 为独立可选项。'
-[ "$(uname -s)" = Darwin ] || { say '仅支持 macOS；本次没有安装。' >&2; exit 2; }
-[ "$(uname -m)" = arm64 ] || { say '仅支持原生 Apple Silicon 终端。若在 Rosetta 下，请关闭 Rosetta 后重试。' >&2; exit 2; }
-[ "$(id -u)" != 0 ] || { say '请以普通用户运行，不要 sudo 整个脚本。' >&2; exit 2; }
-[ -t 0 ] && [ -t 1 ] || { say '--install 需要交互式终端，不能用管道自动回答。' >&2; exit 2; }
+[ "$(uname -s)" = Darwin ] || {
+  say '仅支持 macOS；本次没有安装。' >&2
+  exit 2
+}
+[ "$(uname -m)" = arm64 ] || {
+  say '仅支持原生 Apple Silicon 终端。若在 Rosetta 下，请关闭 Rosetta 后重试。' >&2
+  exit 2
+}
+[ "$(id -u)" != 0 ] || {
+  say '请以普通用户运行，不要 sudo 整个脚本。' >&2
+  exit 2
+}
+[ -t 0 ] && [ -t 1 ] || {
+  say '--install 需要交互式终端，不能用管道自动回答。' >&2
+  exit 2
+}
 # 固定格式串与分离参数避免变量紧邻中文括号导致旧 Bash 显示异常。
 # 不覆盖用户 locale；printf 直接输出文件中的 UTF-8 文本。
-say ''; say '基础工具安装计划（已有工具跳过，不主动升级）：'
+say ''
+say '基础工具安装计划（已有工具跳过，不主动升级）：'
 plan_tool() {
   local name="$1" purpose="$2" state='缺少，将安装'
   has "$name" && state='已找到，保留'
@@ -102,17 +130,27 @@ say '保留现有文件和工具路径，不覆盖配置、不迁移旧管理器
 say 'Homebrew 官方说明：https://docs.brew.sh/Installation'
 say '若需要安装 Homebrew，官方安装器可能要求回车和管理员密码；这些系统授权仍由你本人处理。'
 say '本计划不包括 Docker，不启动任何 AI 服务，也不创建登录启动项。'
-confirm '执行以上基础工具安装和配置计划？' || { say '已取消基础环境准备。'; exit 0; }
+confirm '执行以上基础工具安装和配置计划？' || {
+  say '已取消基础环境准备。'
+  exit 0
+}
 if ! xcode-select -p >/dev/null 2>&1 || ! xcrun --find clang >/dev/null 2>&1; then
   say '缺少 Xcode Command Line Tools，需要在 Apple 系统界面完成安装。'
   if confirm '现在打开 Apple 安装界面？（条款和系统授权由你本人处理）'; then
-    xcode-select --install || { say '系统未能打开安装界面，请检查系统提示后从菜单重试。'; exit 1; }
+    xcode-select --install || {
+      say '系统未能打开安装界面，请检查系统提示后从菜单重试。'
+      exit 1
+    }
     printf '完成系统安装后按回车继续，或关闭本窗口取消：'
     IFS= read -r _ || exit 1
     if ! xcode-select -p >/dev/null 2>&1 || ! xcrun --find clang >/dev/null 2>&1; then
-      say 'Command Line Tools 尚未就绪；本次停止，请完成系统安装后从菜单重试。'; exit 1
+      say 'Command Line Tools 尚未就绪；本次停止，请完成系统安装后从菜单重试。'
+      exit 1
     fi
-  else say '已取消基础环境准备。'; exit 1; fi
+  else
+    say '已取消基础环境准备。'
+    exit 1
+  fi
 fi
 export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_ANALYTICS=1
 # 这些变量仅影响当前进程，不改变持久化用户设置。
@@ -134,14 +172,24 @@ if [ -n "$BREW" ]; then
 fi
 install_formula() {
   local name="$1"
-  if has "$name"; then say "[保留] $name"; return; fi
-  if [ -z "$BREW" ]; then fail "$name 缺失，Homebrew 不可用；先完成 brew 安装后重跑。"; return; fi
+  if has "$name"; then
+    say "[保留] $name"
+    return
+  fi
+  if [ -z "$BREW" ]; then
+    fail "$name 缺失，Homebrew 不可用；先完成 brew 安装后重跑。"
+    return
+  fi
   if "$BREW" list --formula "$name" >/dev/null 2>&1; then
-    fail "$name 已由 brew 安装但 PATH 不可用；请检查 brew info ${name}，不强制 relink。"; return
+    fail "$name 已由 brew 安装但 PATH 不可用；请检查 brew info ${name}，不强制 relink。"
+    return
   fi
   printf '[安装] %s (brew install %s，含必要依赖)\n' "$name" "$name"
   {
-    "$BREW" install "$name" || { fail "$name 安装失败；检查 brew doctor / brew info $name 后重跑。"; return; }
+    "$BREW" install "$name" || {
+      fail "$name 安装失败；检查 brew doctor / brew info $name 后重跑。"
+      return
+    }
     has "$name" || fail "$name 安装结束但命令未找到；检查 PATH。"
   }
 }
@@ -151,7 +199,8 @@ for prerequisite in curl tar shasum git; do
   has "$prerequisite" || fail "缺少基础工具 ${prerequisite}；请检查 macOS / Xcode CLT 和 PATH。"
 done
 if has python3 && python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
-  say "[保留] Python"; if [ "$DETAILS" -eq 1 ]; then report_tool python3 --version; fi
+  say "[保留] Python"
+  if [ "$DETAILS" -eq 1 ]; then report_tool python3 --version; fi
 elif has uv; then
   PYTHON_READY=$(uv python find --no-python-downloads 3.12 2>/dev/null || true)
   if [ -z "$PYTHON_READY" ]; then
@@ -173,11 +222,18 @@ append_block() {
   local marker="$1" body="$2" legacy_marker
   # 识别旧版初始化标记，避免升级后重复追加配置。
   legacy_marker="${marker/mac-ai-kit/lean-ai-kit}"
-  if [ -L "$RC" ]; then fail "$RC 是符号链接，未修改；请手动添加初始化配置。"; return; fi
-  if [ -f "$RC" ] && { grep -Fq "$marker" "$RC" || grep -Fq "$legacy_marker" "$RC"; }; then say "[保留] $RC 已包含 $marker"; return; fi
-  say "追加到 ${RC}（不覆盖现有内容）："; printf '%s\n' "$body"
+  if [ -L "$RC" ]; then
+    fail "$RC 是符号链接，未修改；请手动添加初始化配置。"
+    return
+  fi
+  if [ -f "$RC" ] && { grep -Fq "$marker" "$RC" || grep -Fq "$legacy_marker" "$RC"; }; then
+    say "[保留] $RC 已包含 $marker"
+    return
+  fi
+  say "追加到 ${RC}（不覆盖现有内容）："
+  printf '%s\n' "$body"
   # 追加操作已包含在确认的计划中；不再次询问。
-  if printf '\n# %s\n%s\n' "$marker" "$body" >> "$RC"; then
+  if printf '\n# %s\n%s\n' "$marker" "$body" >>"$RC"; then
     printf '[已配置] %s: %s\n' "$RC" "$marker"
   else fail "不能写入 ${RC}；请手动配置。"; fi
 }
@@ -193,7 +249,10 @@ fi
 # 意外发现旧管理器视为冲突，不代表授权迁移或删除。
 EXISTING_MANAGER=
 for manager in nvm volta asdf mise; do
-  if has "$manager"; then EXISTING_MANAGER="$manager"; break; fi
+  if has "$manager"; then
+    EXISTING_MANAGER="$manager"
+    break
+  fi
 done
 LEGACY_NVM_HOME=${NVM_DIR:-${XDG_CONFIG_HOME:+$XDG_CONFIG_HOME/nvm}}
 LEGACY_NVM_HOME=${LEGACY_NVM_HOME:-$HOME/.nvm}
@@ -206,30 +265,32 @@ done
 if [ -n "$EXISTING_MANAGER" ]; then
   fail "意外检测到 ${EXISTING_MANAGER}；暂停 Node/fnm 安装与初始化，请人工检查。本脚本不迁移、不卸载、不删除配置。"
 else
-    install_formula fnm
-    if has fnm; then
-      if has node; then
-        say "[保留] Node"; if [ "$DETAILS" -eq 1 ]; then report_tool node --version; fi
-      elif fnm list 2>/dev/null | grep -Eq 'v[0-9]+\.'; then
-        say '[保留] fnm 已有 Node 版本；请执行 fnm list 并手动选择，不重复安装。'
-      else
-        printf '[安装] Node %s LTS (fnm)\n' "$NODE_MAJOR"
-        fnm install "$NODE_MAJOR" || fail "Node 安装失败；检查网络后重试 fnm install ${NODE_MAJOR}。"
-      fi
-      # 此启动片段仅执行已安装 fnm 程序生成的初始化内容，
-      # 绝不直接执行用户提供的命令或下载的字符串。
-      if [ -n "$RC" ] && [ -f "$RC" ] && grep -Fq 'fnm env' "$RC"; then
-        say "[保留] $RC 已有 fnm 初始化；不重复添加。"
-      elif [ -n "$RC" ]; then
-        FNM_BLOCK='eval "$(fnm env --shell zsh)"'
-        say 'fnm 初始化会在未来终端中选择其默认 Node；本终端不执行用户 shell 配置。'
-        append_block 'mac-ai-kit: fnm' "$FNM_BLOCK"
-      fi
+  install_formula fnm
+  if has fnm; then
+    if has node; then
+      say "[保留] Node"
+      if [ "$DETAILS" -eq 1 ]; then report_tool node --version; fi
+    elif fnm list 2>/dev/null | grep -Eq 'v[0-9]+\.'; then
+      say '[保留] fnm 已有 Node 版本；请执行 fnm list 并手动选择，不重复安装。'
+    else
+      printf '[安装] Node %s LTS (fnm)\n' "$NODE_MAJOR"
+      fnm install "$NODE_MAJOR" || fail "Node 安装失败；检查网络后重试 fnm install ${NODE_MAJOR}。"
+    fi
+    # 此启动片段仅执行已安装 fnm 程序生成的初始化内容，
+    # 绝不直接执行用户提供的命令或下载的字符串。
+    if [ -n "$RC" ] && [ -f "$RC" ] && grep -Fq 'fnm env' "$RC"; then
+      say "[保留] $RC 已有 fnm 初始化；不重复添加。"
+    elif [ -n "$RC" ]; then
+      FNM_BLOCK='eval "$(fnm env --shell zsh)"'
+      say 'fnm 初始化会在未来终端中选择其默认 Node；本终端不执行用户 shell 配置。'
+      append_block 'mac-ai-kit: fnm' "$FNM_BLOCK"
     fi
   fi
+fi
 if [ -d /Applications/Docker.app ] || [ -d "$HOME/Applications/Docker.app" ]; then
   say '[保留] Docker Desktop 应用已存在；不升级、不启动。'
-elif [ -z "$BREW" ]; then fail '无法安装 Docker Desktop：Homebrew 不可用。'
+elif [ -z "$BREW" ]; then
+  fail '无法安装 Docker Desktop：Homebrew 不可用。'
 elif "$BREW" list --cask docker-desktop >/dev/null 2>&1 || "$BREW" list --cask docker >/dev/null 2>&1; then
   say '[保留] brew 已登记 Docker Desktop；请用 brew info --cask docker-desktop 核对位置。'
 else

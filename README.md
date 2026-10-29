@@ -20,7 +20,7 @@ bash start.sh
 4. **环境诊断与 API 说明**：检查工具状态，查看或更新模型目录下的 `API.md`。这是调用说明，不是新建 API 服务。
 5. **Benchmark**：Llama benchmark 用于通用接口测试；MLX benchmark 使用原生计时，两者生成同版 HTML 报告。
    报告默认保存到项目内 `output/reports/测试名称-时间戳-随机后缀/`，已由 `.gitignore` 忽略。
-6. **服务管理**：可选择“启动全部”“仅启动音频”或“仅启动制图”，以及关闭、查看状态与日志，不经过 llama-swap。SD.cpp 可在同一 WebUI / API 切换 Qwen / Krea；audio.cpp 提供转写／YuE2；llama-swap 保留为可选入口。安装工具不等于服务已启动。
+6. **服务管理**：可选择“启动全部”“仅启动音频”或“仅启动制图”，以及关闭、查看状态与日志，不经过 llama-swap。服务默认只允许本机访问，需要时可切换为可信局域网。SD.cpp 可在同一 WebUI / API 切换 Qwen / Krea；audio.cpp 提供转写／YuE2；llama-swap 保留为可选入口。安装工具不等于服务已启动。
 
 ## 文档
 
@@ -39,5 +39,5 @@ bash scripts/test.sh --remote
 
 服务仅在明确操作后启动；不要把无认证接口暴露公网。模型配置中的启动命令必须可信。工具包不会自动统一各后端 API，也不承诺未知模型或异步任务的内存调度安全。
 
-本项目代码为 [MIT](LICENSE)，第三方程序、模型和资产各自遵循上游许可，见 [第三方说明](THIRD_PARTY_NOTICES.md)。不要关闭 Gatekeeper、TLS 或系统安全设置来绕过错误。[安全说明](SECURITY.md) · [变更记录](CHANGELOG.md)
+本项目代码为 [MIT](LICENSE)，第三方程序、模型和资产各自遵循上游许可，见 [第三方说明](THIRD_PARTY_NOTICES.md)。不要关闭 Gatekeeper、TLS 或系统安全设置来绕过错误。[安全说明](SECURITY.md)
 

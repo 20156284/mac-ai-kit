@@ -1,4 +1,5 @@
 """MLX 原生 API 入口回归；不访问网络、不启动服务、不执行推理。"""
+
 import contextlib
 import io
 from pathlib import Path
@@ -18,17 +19,21 @@ class DirectEndpointTests(unittest.TestCase):
         proxy = Mock(return_value='http://127.0.0.1:8080/v1')
         captured = []
         real_client = bench.Client
+
         def make_client(url, timeout):
             captured.append(url)
             return real_client(url, timeout)
+
         output = io.StringIO()
-        with tempfile.TemporaryDirectory() as folder, \
-             patch.dict(sys.modules, {'llama_benchmark': types.SimpleNamespace(default_url=proxy)}), \
-             patch('builtins.input', return_value=entered) as prompt, \
-             patch.object(bench, 'Client', side_effect=make_client), \
-             patch.object(bench, 'choose_model', return_value='test-model'), \
-             patch.object(bench, 'run_benchmark', return_value={'results': []}), \
-             contextlib.redirect_stdout(output):
+        with (
+            tempfile.TemporaryDirectory() as folder,
+            patch.dict(sys.modules, {'llama_benchmark': types.SimpleNamespace(default_url=proxy)}),
+            patch('builtins.input', return_value=entered) as prompt,
+            patch.object(bench, 'Client', side_effect=make_client),
+            patch.object(bench, 'choose_model', return_value='test-model'),
+            patch.object(bench, 'run_benchmark', return_value={'results': []}),
+            contextlib.redirect_stdout(output),
+        ):
             code = bench.main(['--output', folder, *arguments])
         self.assertEqual(code, 0)
         proxy.assert_not_called()
@@ -51,10 +56,16 @@ class DirectEndpointTests(unittest.TestCase):
 
     def test_connection_failure_explains_app_api_without_starting_test(self):
         output = io.StringIO()
-        with tempfile.TemporaryDirectory() as folder, \
-             patch.object(bench, 'choose_model', side_effect=urllib.error.URLError(ConnectionRefusedError(61, 'Connection refused'))), \
-             patch.object(bench, 'run_benchmark') as run, \
-             contextlib.redirect_stderr(output):
+        with (
+            tempfile.TemporaryDirectory() as folder,
+            patch.object(
+                bench,
+                'choose_model',
+                side_effect=urllib.error.URLError(ConnectionRefusedError(61, 'Connection refused')),
+            ),
+            patch.object(bench, 'run_benchmark') as run,
+            contextlib.redirect_stderr(output),
+        ):
             code = bench.main(['--base-url', 'http://127.0.0.1:9001/v1', '--output', folder])
         self.assertEqual(code, 1)
         run.assert_not_called()

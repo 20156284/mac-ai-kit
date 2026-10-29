@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """调用 SD.cpp 原生模型管理接口；不启动进程、不下载模型、不转发推理。"""
+
 import argparse
 import json
 import sys
@@ -24,8 +25,7 @@ SELECTIONS = {
 def request(base, endpoint, payload=None, timeout=15):
     """保留服务端错误；409 不重试、不取消任务，也不关闭进程。"""
     data = None if payload is None else json.dumps(payload).encode()
-    req = Request(base.rstrip('/') + '/sdcpp/v1/' + endpoint, data=data,
-                  headers={'Content-Type': 'application/json'})
+    req = Request(base.rstrip('/') + '/sdcpp/v1/' + endpoint, data=data, headers={'Content-Type': 'application/json'})
     try:
         with urlopen(req, timeout=timeout) as response:
             return json.load(response)
@@ -38,8 +38,14 @@ def selection(recipe, files):
     """必须使用服务器返回的 opaque id；重名组件拒绝猜测，改用 WebUI 选择。"""
     result = {}
     for slot, relative in SELECTIONS[recipe].items():
-        found = [f for f in files if f.get('relative_path') == relative
-                 and f.get('category') == relative.split('/')[0] and isinstance(f.get('id'), str) and f['id']]
+        found = [
+            f
+            for f in files
+            if f.get('relative_path') == relative
+            and f.get('category') == relative.split('/')[0]
+            and isinstance(f.get('id'), str)
+            and f['id']
+        ]
         if len(found) != 1:
             raise ValueError(f'{relative}：找到 {len(found)} 个候选，请在 WebUI 选择组件；未切换模型')
         result[slot] = found[0]['id']
@@ -53,7 +59,15 @@ def main(argv=None):
     parser.add_argument('recipe', nargs='?', choices=list(SELECTIONS), help='加载的图像配方')
     args = parser.parse_args(argv)
     url = urlsplit(args.url)
-    if url.scheme not in ('http', 'https') or not url.hostname or url.username or url.password or url.query or url.fragment or url.path not in ('', '/'):
+    if (
+        url.scheme not in ('http', 'https')
+        or not url.hostname
+        or url.username
+        or url.password
+        or url.query
+        or url.fragment
+        or url.path not in ('', '/')
+    ):
         parser.error('地址必须是 http(s)://主机:端口，不含凭据或路径')
     if args.action == 'load' and not args.recipe:
         parser.error('load 必须指定配方')

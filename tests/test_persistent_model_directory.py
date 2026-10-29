@@ -1,4 +1,5 @@
 """Offline persistence/dispatch tests: no models, services or installers run."""
+
 import os
 from pathlib import Path
 import shutil
@@ -21,8 +22,12 @@ class PersistentDirectoryTests(unittest.TestCase):
 
     def shell(self, code, *args):
         prefix = '. "$1/path_validation.sh"; . "$1/model_directory.sh"; shift; '
-        return subprocess.run(['bash', '-c', prefix + code, 'bash', str(self.scripts), *args],
-                              env=self.env, text=True, capture_output=True)
+        return subprocess.run(
+            ['bash', '-c', prefix + code, 'bash', str(self.scripts), *args],
+            env=self.env,
+            text=True,
+            capture_output=True,
+        )
 
     def save(self, path):
         result = self.shell('save_model_directory "$1"', path)
@@ -74,31 +79,44 @@ class PersistentDirectoryTests(unittest.TestCase):
         shutil.copy2(ROOT / 'start.sh', kit / 'start.sh')
         for name in ('path_validation.sh', 'model_directory.sh'):
             shutil.copy2(self.scripts / name, scripts / name)
-        for name in ('api_inventory.py', 'download_models.py', 'model_inventory.py',
-                     'llama_benchmark.py', 'merge_h3_models.py', 'check_tools.py'):
+        for name in (
+            'api_inventory.py',
+            'download_models.py',
+            'model_inventory.py',
+            'llama_benchmark.py',
+            'merge_h3_models.py',
+            'check_tools.py',
+        ):
             (scripts / name).write_text('import sys; print(repr(sys.argv[1:]))\n')
         path = str(self.home / 'My SSD/AI/models')
         self.save(path)
         for task in ('api', 'models', 'installed-models', 'benchmark', 'merge-h3', 'check-tools'):
             with self.subTest(task=task):
-                result = subprocess.run(['bash', str(kit / 'start.sh'), task], env=self.env,
-                                        text=True, capture_output=True)
+                result = subprocess.run(
+                    ['bash', str(kit / 'start.sh'), task], env=self.env, text=True, capture_output=True
+                )
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn(path, result.stdout)
-        result = subprocess.run(['bash', str(kit / 'start.sh'), 'download', '--dry-run'],
-                                env=self.env, text=True, capture_output=True)
+        result = subprocess.run(
+            ['bash', str(kit / 'start.sh'), 'download', '--dry-run'], env=self.env, text=True, capture_output=True
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(path, result.stdout)
 
     def test_real_menu_save_and_api_after_restart(self):
         path = self.home / 'My SSD/AI/models'
         path.mkdir(parents=True)
-        result = subprocess.run(['bash', str(ROOT / 'start.sh')],
-                                input='d\n  ' + str(path) + '  \nq\n', env=self.env,
-                                text=True, capture_output=True)
+        result = subprocess.run(
+            ['bash', str(ROOT / 'start.sh')],
+            input='d\n  ' + str(path) + '  \nq\n',
+            env=self.env,
+            text=True,
+            capture_output=True,
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
-        result = subprocess.run(['bash', str(ROOT / 'start.sh')], input='a\nq\n',
-                                env=self.env, text=True, capture_output=True)
+        result = subprocess.run(
+            ['bash', str(ROOT / 'start.sh')], input='a\nq\n', env=self.env, text=True, capture_output=True
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((path / 'API.md').is_file())
         self.assertIn('检查目录：' + str(path), (path / 'API.md').read_text())
@@ -108,8 +126,7 @@ class PersistentDirectoryTests(unittest.TestCase):
 
     def test_entry_api_does_not_write_default_on_absent_external_volume(self):
         self.save('/Volumes/MacAIKitOfflineTestMissingDisk/AI/models')
-        result = subprocess.run(['bash', str(ROOT / 'start.sh'), 'api'],
-                                env=self.env, text=True, capture_output=True)
+        result = subprocess.run(['bash', str(ROOT / 'start.sh'), 'api'], env=self.env, text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('外置磁盘未挂载', result.stderr)
         self.assertFalse((self.home / 'AI').exists())

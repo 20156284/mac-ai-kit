@@ -1,4 +1,5 @@
 """离线小文件验证 H3 差分复用，不联网或下载真实模型。"""
+
 import hashlib
 import importlib.util
 from pathlib import Path
@@ -6,14 +7,20 @@ import tempfile
 import unittest
 from unittest import mock
 
-spec = importlib.util.spec_from_file_location('reuse_downloader', Path(__file__).resolve().parents[1] / 'scripts/download_models.py')
+spec = importlib.util.spec_from_file_location(
+    'reuse_downloader', Path(__file__).resolve().parents[1] / 'scripts/download_models.py'
+)
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 
 
 def model(name, files, family='h3'):
-    return {'id': name, 'repo_id': 'owner/' + name, 'reuse_family': family,
-            'expected_files': {p: {'bytes': len(b), 'sha256': hashlib.sha256(b).hexdigest()} for p, b in files.items()}}
+    return {
+        'id': name,
+        'repo_id': 'owner/' + name,
+        'reuse_family': family,
+        'expected_files': {p: {'bytes': len(b), 'sha256': hashlib.sha256(b).hexdigest()} for p, b in files.items()},
+    }
 
 
 class H3ReuseTests(unittest.TestCase):
@@ -98,12 +105,19 @@ class H3ReuseTests(unittest.TestCase):
     def test_bad_download_never_assembled(self):
         def corrupt(args, check):
             (Path(args[args.index('--local-dir') + 1]) / 'config.json').write_bytes(b'X')
+
         with mock.patch.object(m.subprocess, 'run', side_effect=corrupt), self.assertRaisesRegex(ValueError, 'SHA256'):
             m.download_verified_bundle('ms-hub', self.b, self.target, 4, [self.source], [self.a, self.b])
         self.assertEqual(list(self.target.iterdir()), [])
 
     def test_two_selected_size_deduplicates_shared_sha(self):
-        total = m.reuse_estimate([self.a, self.b], [(self.a, self.source, []), (self.b, self.target, [])], [], [self.a, self.b], verify_sources=False)
+        total = m.reuse_estimate(
+            [self.a, self.b],
+            [(self.a, self.source, []), (self.b, self.target, [])],
+            [],
+            [self.a, self.b],
+            verify_sources=False,
+        )
         self.assertEqual(total, len(self.shared) + 2)
 
     def test_source_broken_link_requires_explicit_repair(self):
@@ -115,6 +129,7 @@ class H3ReuseTests(unittest.TestCase):
 
     def test_two_downloads_verify_first_then_link_second(self):
         first = self.root / 'new-FL2VA'
+
         def download(args, check):
             stage = Path(args[args.index('--local-dir') + 1])
             includes = [args[i + 1] for i, item in enumerate(args) if item == '--include']
@@ -125,6 +140,7 @@ class H3ReuseTests(unittest.TestCase):
             else:
                 self.assertEqual(includes, ['config.json'])
                 (stage / 'config.json').write_bytes(b'B')
+
         with mock.patch.object(m.subprocess, 'run', side_effect=download):
             m.download_verified_bundle('ms-hub', self.a, first, 4, [], [self.a, self.b])
             m.download_verified_bundle('ms-hub', self.b, self.target, 4, [first], [self.a, self.b])
@@ -138,11 +154,13 @@ class H3ReuseTests(unittest.TestCase):
 
     def test_interrupt_preserves_stage_then_resumes_without_redownloading(self):
         stages = []
+
         def interrupted(args, check):
             stage = Path(args[args.index('--local-dir') + 1])
             stages.append(stage)
             (stage / 'weight.safetensors').write_bytes(self.shared)
             raise KeyboardInterrupt()
+
         with mock.patch.object(m.subprocess, 'run', side_effect=interrupted), self.assertRaises(KeyboardInterrupt):
             m.download_verified_bundle('ms-hub', self.b, self.target, 4, [], [self.b])
         self.assertEqual((stages[0] / 'weight.safetensors').read_bytes(), self.shared)

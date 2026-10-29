@@ -1,4 +1,5 @@
 """可选 Qwen 条目的离线回归测试；不获取权重、不调用命令行客户端。"""
+
 import contextlib
 import fnmatch
 import importlib.util
@@ -14,6 +15,7 @@ spec = importlib.util.spec_from_file_location('download_qwen', ROOT / 'scripts/d
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 IDS = ('qwen38-flash-next-8bit', 'qwen38-27b-bf16')
+
 
 class QwenOptionsTests(unittest.TestCase):
     def setUp(self):
@@ -56,9 +58,11 @@ class QwenOptionsTests(unittest.TestCase):
                 target = Path(tmp) / 'Shared models'
                 output = io.StringIO()
                 with contextlib.redirect_stdout(output), mock.patch.object(m.subprocess, 'run') as run:
-                    self.assertEqual(m.main(['--select', ','.join(keys), '--models-dir', str(target), '--dry-run', '--details']), 0)
+                    self.assertEqual(
+                        m.main(['--select', ','.join(keys), '--models-dir', str(target), '--dry-run', '--details']), 0
+                    )
                     run.assert_not_called()
-                plan = json.loads(output.getvalue()[output.getvalue().index('{\n'):])
+                plan = json.loads(output.getvalue()[output.getvalue().index('{\n') :])
                 expanded = m.expand_dependencies([self.by_id[key] for key in keys], self.models)
                 self.assertEqual(len(plan['commands']), len(expanded))
                 for command, entry in zip(plan['commands'], expanded):
@@ -71,11 +75,15 @@ class QwenOptionsTests(unittest.TestCase):
     def test_no_implicit_qwen_dependencies_or_default_download(self):
         for entry in self.models:
             self.assertFalse(set(entry.get('requires', [])) & set(IDS))
-        with mock.patch.object(m.sys.stdin, 'isatty', return_value=False), mock.patch.object(m.subprocess, 'run') as run:
+        with (
+            mock.patch.object(m.sys.stdin, 'isatty', return_value=False),
+            mock.patch.object(m.subprocess, 'run') as run,
+        ):
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
                 m.main([])
             self.assertEqual(raised.exception.code, 2)
             run.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

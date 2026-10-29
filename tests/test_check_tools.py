@@ -45,7 +45,10 @@ class CheckToolsTests(unittest.TestCase):
     def test_metadata_does_not_execute_binary_or_read_config(self):
         self.create('bin/llama-server', True)
         self.create('config/llama-server.json')
-        with patch.object(Path, 'open', side_effect=AssertionError('must not read files')), patch.object(check.subprocess, 'run', side_effect=AssertionError('must not execute components')):
+        with (
+            patch.object(Path, 'open', side_effect=AssertionError('must not read files')),
+            patch.object(check.subprocess, 'run', side_effect=AssertionError('must not execute components')),
+        ):
             row = check.inventory(self.root, self.home, [(321, 'llama-server')])[1]
         self.assertIn('已发现', row['installed'])
         self.assertIn('已发现', row['configured'])
@@ -53,7 +56,9 @@ class CheckToolsTests(unittest.TestCase):
         self.assertNotIn('健康', row['process'])
 
     def test_exact_process_names_only(self):
-        processes = check.parse_processes(' 20 /usr/bin/node\n21 /x/not-llama-server\n22 /x/llama-server-backup\n23 /x/MLX Core\n24 /x/llama-server\n25 python3\nbad text\n')
+        processes = check.parse_processes(
+            ' 20 /usr/bin/node\n21 /x/not-llama-server\n22 /x/llama-server-backup\n23 /x/MLX Core\n24 /x/llama-server\n25 python3\nbad text\n'
+        )
         rows = check.inventory(self.root, self.home, processes)
         self.assertIn('PID 24', rows[1]['process'])
         self.assertNotIn('21', rows[1]['process'])
@@ -132,7 +137,11 @@ class CheckToolsTests(unittest.TestCase):
         for value in ('/', 'relative', '/tmp/../bad', '/tmp/evil\nvalue'):
             with self.subTest(value=value), contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(check.main(['--root', value]), 2)
-        with patch.dict(os.environ, {'HERMES_HOME': 'bad'}), patch.object(check, 'read_processes', return_value=[]), contextlib.redirect_stderr(io.StringIO()):
+        with (
+            patch.dict(os.environ, {'HERMES_HOME': 'bad'}),
+            patch.object(check, 'read_processes', return_value=[]),
+            contextlib.redirect_stderr(io.StringIO()),
+        ):
             self.assertEqual(check.main([]), 2)
 
     def test_details_never_print_config_contents(self):

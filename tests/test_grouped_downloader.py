@@ -1,4 +1,5 @@
 """整套模型选择、中文分组与简洁预览的离线回归测试。"""
+
 import contextlib
 import importlib.util
 import io
@@ -42,7 +43,14 @@ class GroupedDownloaderTests(unittest.TestCase):
             label = model['short_name']
             self.assertIn(model['repo_id'].split('/')[0], label)
             self.assertIn('（', label)
-        for name in ('h3-mlx-8bit', 'h3-ref2va-mlx-8bit', 'music3-mlx-8bit', 'qwen38-flash-next-8bit', 'qwen38-27b-bf16', 'yue2-audio-cpp-bf16'):
+        for name in (
+            'h3-mlx-8bit',
+            'h3-ref2va-mlx-8bit',
+            'music3-mlx-8bit',
+            'qwen38-flash-next-8bit',
+            'qwen38-27b-bf16',
+            'yue2-audio-cpp-bf16',
+        ):
             self.assertTrue(self.by_id[name]['short_name'].startswith(self.by_id[name]['repo_id']))
             self.assertEqual(Path(self.by_id[name]['subdir']).name, self.by_id[name]['repo_id'].split('/')[-1])
         self.assertNotIn('tts-qwen3-1.7b-orig', self.by_id)
@@ -70,7 +78,7 @@ class GroupedDownloaderTests(unittest.TestCase):
 
     def test_detailed_preview_reuses_shared_components(self):
         output = self.capture(['--select', 'krea2-turbo,krea2-turbo', '--dry-run', '--details'])
-        plan = json.loads(output[output.index('{\n'):])
+        plan = json.loads(output[output.index('{\n') :])
         self.assertEqual(len(plan['commands']), 3)
         paths = [cmd[cmd.index('--local-dir') + 1] for cmd in plan['commands']]
         self.assertEqual(len(set(paths)), 2)
@@ -84,7 +92,22 @@ class GroupedDownloaderTests(unittest.TestCase):
     def test_interactive_root_is_requested_once(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / '模型目录'
-            with mock.patch.object(m.sys.stdin, 'isatty', return_value=True), mock.patch('builtins.input', side_effect=[str(next(i for i, item in enumerate(m.visible_models(self.models), 1) if item['id'] == 'krea2-turbo')), str(target)]) as ask:
+            with (
+                mock.patch.object(m.sys.stdin, 'isatty', return_value=True),
+                mock.patch(
+                    'builtins.input',
+                    side_effect=[
+                        str(
+                            next(
+                                i
+                                for i, item in enumerate(m.visible_models(self.models), 1)
+                                if item['id'] == 'krea2-turbo'
+                            )
+                        ),
+                        str(target),
+                    ],
+                ) as ask,
+            ):
                 output = self.capture(['--dry-run'])
             self.assertEqual(ask.call_count, 2)
             self.assertEqual(sum('根目录' in call.args[0] for call in ask.call_args_list), 1)
@@ -123,7 +146,10 @@ class GroupedDownloaderTests(unittest.TestCase):
             self.assertIn('尚未在本机', entry['notes'])
 
     def test_cli_discovery_prefers_path_without_subprocess(self):
-        with mock.patch.object(m.shutil, 'which', return_value='/tmp/bin/ms-hub'), mock.patch.object(m.subprocess, 'run') as run:
+        with (
+            mock.patch.object(m.shutil, 'which', return_value='/tmp/bin/ms-hub'),
+            mock.patch.object(m.subprocess, 'run') as run,
+        ):
             self.assertEqual(m.discover_cli(), Path('/tmp/bin/ms-hub'))
             run.assert_not_called()
 
@@ -132,7 +158,10 @@ class GroupedDownloaderTests(unittest.TestCase):
             cli = Path(tmp) / 'ms-hub'
             cli.write_text('测试占位，不执行')
             cli.chmod(0o700)
-            with mock.patch.object(m.shutil, 'which', side_effect=lambda name: '/tmp/uv' if name == 'uv' else None), mock.patch.object(m.subprocess, 'run', return_value=mock.Mock(stdout=tmp + '\n')) as run:
+            with (
+                mock.patch.object(m.shutil, 'which', side_effect=lambda name: '/tmp/uv' if name == 'uv' else None),
+                mock.patch.object(m.subprocess, 'run', return_value=mock.Mock(stdout=tmp + '\n')) as run,
+            ):
                 self.assertEqual(m.discover_cli(allow_uv=True), cli)
                 run.assert_called_once_with(['uv', 'tool', 'dir', '--bin'], check=True, capture_output=True, text=True)
             with mock.patch.object(m.shutil, 'which', return_value=None), mock.patch.object(m.subprocess, 'run') as run:

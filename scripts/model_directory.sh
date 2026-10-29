@@ -15,7 +15,11 @@ load_model_directory() {
   local saved
   saved="$(cat -- "$MODEL_DIRECTORY_FILE")" || return 2
   validate_model_root_shell "$saved" || return 2
-  case "$VALIDATED_MODEL_ROOT" in /*) ;; *) printf '已保存的模型目录必须是绝对路径，不会退回默认目录。\n' >&2; return 2 ;; esac
+  case "$VALIDATED_MODEL_ROOT" in /*) ;; *)
+    printf '已保存的模型目录必须是绝对路径，不会退回默认目录。\n' >&2
+    return 2
+    ;;
+  esac
   MODEL_DIR="$VALIDATED_MODEL_ROOT"
   DIRECTORY_CHOSEN=1
 }
@@ -25,9 +29,15 @@ save_model_directory() {
   model_directory_config
   folder="${MODEL_DIRECTORY_FILE%/*}"
   # 不执行配置内容，原子替换；失败时保留原设置。
-  (umask 077; mkdir -p -- "$folder") || return $?
-  temporary="$(umask 077; mktemp "$folder/.model-directory.XXXXXX")" || return $?
-  if ! printf '%s\n' "$value" > "$temporary" || ! mv -f -- "$temporary" "$MODEL_DIRECTORY_FILE"; then
+  (
+    umask 077
+    mkdir -p -- "$folder"
+  ) || return $?
+  temporary="$(
+    umask 077
+    mktemp "$folder/.model-directory.XXXXXX"
+  )" || return $?
+  if ! printf '%s\n' "$value" >"$temporary" || ! mv -f -- "$temporary" "$MODEL_DIRECTORY_FILE"; then
     rm -f -- "$temporary"
     printf '无法保存模型目录设置：%s\n' "$MODEL_DIRECTORY_FILE" >&2
     return 1
@@ -36,13 +46,15 @@ save_model_directory() {
 model_volume_ready() {
   local value="$1" volume rest mount_command
   case "$value" in /Volumes/*)
-    rest="${value#/Volumes/}"; volume="/Volumes/${rest%%/*}"
+    rest="${value#/Volumes/}"
+    volume="/Volumes/${rest%%/*}"
     mount_command=/sbin/mount
     [ -x "$mount_command" ] || mount_command=/bin/mount
     if [ ! -d "$volume" ] || ! "$mount_command" | grep -F -- " on $volume (" >/dev/null; then
       printf '外置磁盘未挂载：%s。请连接并挂载后重试；保留模型目录 %s，不会改用默认目录或创建假挂载目录。\n' "$volume" "$value" >&2
       return 1
-    fi ;;
+    fi
+    ;;
   esac
 }
 
@@ -51,8 +63,12 @@ model_directory_for_args() {
   EFFECTIVE_MODEL_DIR="$MODEL_DIR"
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      --models-dir) [ "$#" -ge 2 ] || return 2; EFFECTIVE_MODEL_DIR="$2"; shift ;;
-      --models-dir=*) EFFECTIVE_MODEL_DIR="${1#*=}" ;;
+    --models-dir)
+      [ "$#" -ge 2 ] || return 2
+      EFFECTIVE_MODEL_DIR="$2"
+      shift
+      ;;
+    --models-dir=*) EFFECTIVE_MODEL_DIR="${1#*=}" ;;
     esac
     shift
   done

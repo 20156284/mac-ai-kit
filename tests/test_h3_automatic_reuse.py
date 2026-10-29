@@ -1,4 +1,5 @@
 """普通 H3 选择的离线端到端小文件测试，不下载真实权重。"""
+
 import contextlib
 import hashlib
 import importlib.util
@@ -9,7 +10,9 @@ import tempfile
 import unittest
 from unittest import mock
 
-spec = importlib.util.spec_from_file_location('auto_h3_downloader', Path(__file__).resolve().parents[1] / 'scripts/download_models.py')
+spec = importlib.util.spec_from_file_location(
+    'auto_h3_downloader', Path(__file__).resolve().parents[1] / 'scripts/download_models.py'
+)
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 
@@ -19,12 +22,29 @@ class AutomaticH3Tests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.base = self.root / 'models'
-        self.content = {name: {'common.bin': b'shared', 'transformer/model.bin': name.encode(),
-                               'config.json': ('config-' + name).encode()} for name in ['FL2VA', 'REF2VA']}
-        self.models = [{'id': name, 'repo_id': 'owner/' + name, 'reuse_family': 'h3',
-                        'subdir': 'video/' + name, 'group': 'image_video', 'disk_gb': 0.000001,
-                        'expected_files': {path: {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
-                                           for path, data in self.content[name].items()}} for name in self.content]
+        self.content = {
+            name: {
+                'common.bin': b'shared',
+                'transformer/model.bin': name.encode(),
+                'config.json': ('config-' + name).encode(),
+            }
+            for name in ['FL2VA', 'REF2VA']
+        }
+        self.models = [
+            {
+                'id': name,
+                'repo_id': 'owner/' + name,
+                'reuse_family': 'h3',
+                'subdir': 'video/' + name,
+                'group': 'image_video',
+                'disk_gb': 0.000001,
+                'expected_files': {
+                    path: {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+                    for path, data in self.content[name].items()
+                },
+            }
+            for name in self.content
+        ]
         self.catalog = self.root / 'catalog.json'
         self.catalog.write_text(json.dumps({'schema_version': 1, 'models': self.models}))
         self.cli = self.root / 'ms-hub'
@@ -53,20 +73,42 @@ class AutomaticH3Tests(unittest.TestCase):
                 target = folder / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(self.content[name][path])
-        with mock.patch.object(m.platform, 'system', return_value='Darwin'), mock.patch.object(m.subprocess, 'run', side_effect=download), contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(m.main(['--catalog', str(self.catalog), '--models-dir', str(self.base), '--select', select, '--cli', str(self.cli)]), 0)
+
+        with (
+            mock.patch.object(m.platform, 'system', return_value='Darwin'),
+            mock.patch.object(m.subprocess, 'run', side_effect=download),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(
+                m.main(
+                    [
+                        '--catalog',
+                        str(self.catalog),
+                        '--models-dir',
+                        str(self.base),
+                        '--select',
+                        select,
+                        '--cli',
+                        str(self.cli),
+                    ]
+                ),
+                0,
+            )
 
     def test_real_catalog_metadata_both_directions_and_existing_ref_priority(self):
         catalog = json.loads((Path(__file__).resolve().parents[1] / 'catalog.json').read_text())
-        originals = [next(x for x in catalog['models'] if x['id'] == key)
-                     for key in ['h3-mlx-8bit', 'h3-ref2va-mlx-8bit']]
+        originals = [
+            next(x for x in catalog['models'] if x['id'] == key) for key in ['h3-mlx-8bit', 'h3-ref2va-mlx-8bit']
+        ]
         self.assertEqual({x['reuse_family'] for x in originals}, {'minimax-h3-mlx-serve'})
-        self.models = [dict(original, expected_files=self.models[i]['expected_files'])
-                       for i, original in enumerate(originals)]
+        self.models = [
+            dict(original, expected_files=self.models[i]['expected_files']) for i, original in enumerate(originals)
+        ]
         self.catalog.write_text(json.dumps({'schema_version': 1, 'models': self.models}))
         contents = self.content
-        self.content = {original['repo_id'].split('/')[-1]: contents[name]
-                        for original, name in zip(originals, ['FL2VA', 'REF2VA'])}
+        self.content = {
+            original['repo_id'].split('/')[-1]: contents[name] for original, name in zip(originals, ['FL2VA', 'REF2VA'])
+        }
         for old_index, new_index, both in [(0, 1, False), (1, 0, False), (1, 0, True)]:
             with self.subTest(old=old_index, both=both):
                 self.base = self.root / ('actual-' + str(old_index) + '-' + str(both))
@@ -78,7 +120,9 @@ class AutomaticH3Tests(unittest.TestCase):
                     self.run_download(selected)
                 if both:
                     self.assertEqual([c.args[1]['id'] for c in calls.call_args_list], [old['id'], new['id']])
-                self.assertEqual(self.fetched, [(new['repo_id'].split('/')[-1], ['transformer/model.bin', 'config.json'])])
+                self.assertEqual(
+                    self.fetched, [(new['repo_id'].split('/')[-1], ['transformer/model.bin', 'config.json'])]
+                )
                 target = self.base / new['subdir']
                 self.assertEqual((target / 'common.bin').resolve(), source / 'common.bin')
                 self.assertFalse((target / 'transformer/model.bin').is_symlink())
@@ -105,7 +149,9 @@ class AutomaticH3Tests(unittest.TestCase):
 
     def test_both_without_existing_package_download_shared_only_once(self):
         self.run_download('FL2VA,REF2VA')
-        self.assertEqual(self.fetched, [('FL2VA', list(self.content['FL2VA'])), ('REF2VA', ['transformer/model.bin', 'config.json'])])
+        self.assertEqual(
+            self.fetched, [('FL2VA', list(self.content['FL2VA'])), ('REF2VA', ['transformer/model.bin', 'config.json'])]
+        )
 
     def test_single_without_existing_package_downloads_normally(self):
         self.run_download('FL2VA')

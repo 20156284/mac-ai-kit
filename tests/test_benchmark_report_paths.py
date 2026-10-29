@@ -1,4 +1,5 @@
 """报告归档目录回归；不请求模型接口。"""
+
 import contextlib
 import io
 import os
@@ -31,22 +32,26 @@ class ReportPathsTests(unittest.TestCase):
                 os.chdir(old)
 
     def test_mlx_explicit_output_wins(self):
-        with tempfile.TemporaryDirectory() as folder, \
-             patch.object(mlx, 'choose_model', return_value='mock'), \
-             patch.object(mlx, 'run_benchmark', return_value={'results': []}) as run, \
-             contextlib.redirect_stdout(io.StringIO()):
+        with (
+            tempfile.TemporaryDirectory() as folder,
+            patch.object(mlx, 'choose_model', return_value='mock'),
+            patch.object(mlx, 'run_benchmark', return_value={'results': []}) as run,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             self.assertEqual(mlx.main(['--base-url', 'http://localhost:11234/v1', '--output', folder]), 0)
             self.assertEqual(run.call_args.args[2], Path(folder))
 
     def test_llama_explicit_output_wins(self):
-        with tempfile.TemporaryDirectory() as folder, \
-             patch.object(llama.sys, 'argv', ['benchmark', '--base-url', llama.DEFAULT_URL, '--output', folder]), \
-             patch.object(llama.shutil, 'which', return_value='/bin/uvx'), \
-             patch.object(llama, 'discover', return_value=[{'id': 'org/model'}]), \
-             patch.object(llama, 'resolve_tokenizer', return_value={'kind': 'public', 'value': 'org/model'}), \
-             patch('builtins.input', side_effect=['']), \
-             patch.object(llama, 'run', return_value=0) as run, \
-             contextlib.redirect_stdout(io.StringIO()):
+        with (
+            tempfile.TemporaryDirectory() as folder,
+            patch.object(llama.sys, 'argv', ['benchmark', '--base-url', llama.DEFAULT_URL, '--output', folder]),
+            patch.object(llama.shutil, 'which', return_value='/bin/uvx'),
+            patch.object(llama, 'discover', return_value=[{'id': 'org/model'}]),
+            patch.object(llama, 'resolve_tokenizer', return_value={'kind': 'public', 'value': 'org/model'}),
+            patch('builtins.input', side_effect=['']),
+            patch.object(llama, 'run', return_value=0) as run,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             self.assertEqual(llama.main(), 0)
             self.assertEqual(run.call_args.args[5], Path(folder))
 
@@ -55,8 +60,10 @@ class ReportPathsTests(unittest.TestCase):
             path = Path(folder)
             (path / '.gitignore').write_text((ROOT / '.gitignore').read_text())
             subprocess.run(['git', 'init', '-q', str(path)], check=True)
-            for name in ('output/reports/mlx-benchmark-time/results.csv',
-                         'output/reports/llama-benchmark-time/stdout.log',
-                         'output/reports/mlx-benchmark-time/report.html'):
+            for name in (
+                'output/reports/mlx-benchmark-time/results.csv',
+                'output/reports/llama-benchmark-time/stdout.log',
+                'output/reports/mlx-benchmark-time/report.html',
+            ):
                 result = subprocess.run(['git', '-C', str(path), 'check-ignore', name], capture_output=True)
                 self.assertEqual(result.returncode, 0, name)
